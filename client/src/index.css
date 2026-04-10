@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-primary: #10b981; /* Emerald-500 */
+  --color-secondary: #334155; /* Slate-700 */
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-slate-800 antialiased font-sans selection:bg-emerald-100 min-h-screen;
+    margin: 0;
+    /* Soft White Foundation */
+    background: #ffffff;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-slate-100;
+  }
+
+  .glass-card {
+    @apply bg-white border border-slate-100/80 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/40;
+  }
+
+  .btn-primary {
+    @apply bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 px-8 rounded-2xl transition-all duration-300 shadow-xl shadow-emerald-600/10 active:scale-[0.98] disabled:opacity-50 uppercase text-[10px] tracking-[0.2em];
+  }
+
+  .input-field {
+    @apply bg-slate-50 border border-slate-200/50 rounded-2xl py-4 px-5 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500/30 transition-all placeholder:text-slate-400 text-slate-900 font-bold;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 border text-slate-400 border-transparent hover:bg-emerald-50 hover:text-emerald-700;
+  }
+
+  .sidebar-link-active {
+    @apply bg-emerald-50 text-emerald-600 border-emerald-100/50 shadow-sm font-black;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 12px;
+  border: 3px solid #f8fafc;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
