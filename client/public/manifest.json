@@ -1,18 +1,19 @@
 {
   "short_name": "ShopTrack",
   "name": "ShopTrack Pro - Revenue Manager",
+  "description": "Professional shop revenue tracking and sales management application for small businesses.",
   "icons": [
     {
-      "src": "/logo192.jpg",
-      "type": "image/jpeg",
+      "src": "/logo192.png",
+      "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo512.jpg",
-      "type": "image/jpeg",
+      "src": "/logo512.png",
+      "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "start_url": "/",
