@@ -102,94 +102,111 @@ const Products = () => {
       </div>
 
       {isAdding && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] w-full max-w-2xl overflow-hidden animate-in zoom-in duration-300 border border-white">
-            <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] w-full max-w-2xl max-h-[75vh] md:max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in duration-300 border border-white">
+            {/* 1. Static Header */}
+            <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 flex-shrink-0">
               <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">Registration Form</h2>
               <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white text-slate-300 hover:text-red-500 rounded-full transition-all">
                 <X size={24} />
               </button>
             </div>
             
-            <form onSubmit={handleAdd} className="p-10 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4 md:col-span-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Complete Product Name</label>
-                  <input 
-                    type="text" 
-                    className="input-field py-4 font-black italic text-lg" 
-                    placeholder="Enter unique product title..."
-                    value={newProduct.name}
-                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Buy Price</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xl font-black italic">₹</span>
+            {/* 2. Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+              <form id="productForm" onSubmit={handleAdd} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4 md:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Complete Product Name</label>
                     <input 
-                      type="number" 
-                      className="input-field pl-10 py-4 font-black text-xl italic" 
-                      placeholder="0.00"
-                      value={newProduct.buyPrice}
-                      onChange={(e) => setNewProduct({ ...newProduct, buyPrice: e.target.value })}
+                      type="text" 
+                      className="input-field py-4 font-black italic text-lg" 
+                      placeholder="Enter unique product title..."
+                      value={newProduct.name}
+                      onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                       required
                     />
                   </div>
-                </div>
 
-                <div className="space-y-4">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Market MRP (Selling)</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xl font-black italic">₹</span>
+                  <div className="space-y-4">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Buy Price</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xl font-black italic">₹</span>
+                      <input 
+                        type="number" 
+                        className="input-field pl-10 py-4 font-black text-xl italic" 
+                        placeholder="0.00"
+                        value={newProduct.buyPrice}
+                        onChange={(e) => setNewProduct({ ...newProduct, buyPrice: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Market MRP (Selling)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xl font-black italic">₹</span>
+                      <input 
+                        type="number" 
+                        className="input-field pl-10 py-4 font-black text-xl italic" 
+                        placeholder="0.00"
+                        value={newProduct.mrp}
+                        onChange={(e) => setNewProduct({ ...newProduct, mrp: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Stock Count</label>
                     <input 
                       type="number" 
-                      className="input-field pl-10 py-4 font-black text-xl italic" 
-                      placeholder="0.00"
-                      value={newProduct.mrp}
-                      onChange={(e) => setNewProduct({ ...newProduct, mrp: e.target.value })}
-                      required
+                      className="input-field py-4 font-black text-xl italic" 
+                      placeholder="0 Units"
+                      value={newProduct.stockQuantity}
+                      onChange={(e) => setNewProduct({ ...newProduct, stockQuantity: e.target.value })}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-4">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Stock Count</label>
-                  <input 
-                    type="number" 
-                    className="input-field py-4 font-black text-xl italic" 
-                    placeholder="0 Units"
-                    value={newProduct.stockQuantity}
-                    onChange={(e) => setNewProduct({ ...newProduct, stockQuantity: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Visual Identity</label>
-                  <label className="cursor-pointer block bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-6 text-center hover:border-emerald-500 hover:bg-emerald-50 transition-all">
-                    <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                    {previewUrl ? (
+                  <div className="space-y-4 md:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Visual Identity</label>
+                    <label className="cursor-pointer block bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-6 text-center hover:border-emerald-500 hover:bg-emerald-50 transition-all">
+                      <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                      {previewUrl ? (
                          <div className="flex items-center justify-center gap-4">
                             <img src={previewUrl} alt="Preview" className="h-20 w-20 object-cover rounded-2xl shadow-lg ring-4 ring-white" />
                             <span className="text-[10px] font-black text-slate-400 uppercase italic">Replace Image</span>
                          </div>
-                      ) : (
-                        <div className="flex flex-col items-center">
-                          <ImageIcon size={32} className="text-slate-300 mb-2" />
-                          <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Select Image Asset</span>
-                        </div>
-                      )}
-                  </label>
+                        ) : (
+                          <div className="flex flex-col items-center">
+                            <ImageIcon size={32} className="text-slate-300 mb-2" />
+                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Select Image Asset</span>
+                          </div>
+                        )}
+                    </label>
+                  </div>
                 </div>
-              </div>
+              </form>
+            </div>
 
-              <div className="flex justify-end gap-5 pt-8 border-t border-slate-50">
-                <button type="button" onClick={() => setIsAdding(false)} className="btn-outline py-5 px-10 border-0 font-black text-[10px] uppercase tracking-widest text-slate-400">Abort</button>
-                <button type="submit" className="btn-primary py-5 px-14 text-[11px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-600/20">SAVE TO VAULT</button>
-              </div>
-            </form>
+            {/* 3. Static Footer (Buttons always visible) */}
+            <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex flex-col md:flex-row justify-end gap-5 flex-shrink-0">
+              <button 
+                type="button" 
+                onClick={() => setIsAdding(false)} 
+                className="btn-outline flex-1 md:flex-none py-4 px-10 border-0 font-black text-[10px] uppercase tracking-widest text-slate-400"
+              >
+                Abort
+              </button>
+              <button 
+                form="productForm"
+                type="submit" 
+                className="btn-primary flex-1 md:flex-none py-4 px-14 text-[11px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-600/20"
+              >
+                SAVE TO VAULT
+              </button>
+            </div>
           </div>
         </div>
       )}
