@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api/config';
+import api, { BASE_URL } from '../api/config';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, getYear, getMonth } from 'date-fns';
 import { 
   Calendar as CalendarIcon, 
@@ -130,7 +130,7 @@ const History = () => {
                         <div className="flex items-center gap-5">
                           <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center font-black text-emerald-600 text-sm group-hover:scale-110 transition-transform italic">
                             {sale.productId?.image ? (
-                               <img src={`http://localhost:5000/api/products/image/${sale.productId.image}`} className="w-full h-full object-cover rounded-2xl" />
+                               <img src={`${BASE_URL}/api/products/image/${sale.productId.image}`} className="w-full h-full object-cover rounded-2xl" />
                             ) : sale.productId?.name?.charAt(0) || 'Ø'}
                           </div>
                           <div className="flex flex-col">

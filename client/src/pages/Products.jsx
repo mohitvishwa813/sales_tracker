@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api/config';
+import api, { BASE_URL } from '../api/config';
 import { 
   Plus, 
   Trash2, 
@@ -200,7 +200,7 @@ const Products = () => {
           <div key={p._id} className="qb-card p-8 bg-white border-0 shadow-lg hover:shadow-2xl hover:-translate-y-1 group transition-all relative overflow-hidden flex flex-col">
             <div className="mb-8 relative h-64 w-full bg-slate-50 rounded-[2.5rem] overflow-hidden border border-slate-50 flex items-center justify-center">
                {p.image ? (
-                  <img src={`http://localhost:5000/api/products/image/${p.image}`} alt={p.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <img src={`${BASE_URL}/api/products/image/${p.image}`} alt={p.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 ) : (
                   <Package size={80} className="text-slate-200 opacity-50" />
                 )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api/config';
+import api, { BASE_URL } from '../api/config';
 import { 
   ShoppingBag, 
   Search, 
@@ -133,7 +133,7 @@ const SalesEntry = () => {
                     <div className="flex items-center gap-3">
                        <div className="w-10 h-10 bg-slate-100 rounded border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-emerald-600 italic">
                           {p.image ? (
-                            <img src={`http://localhost:5000/api/products/image/${p.image}`} alt={p.name} className="h-full w-full object-cover" />
+                            <img src={`${BASE_URL}/api/products/image/${p.image}`} alt={p.name} className="h-full w-full object-cover" />
                           ) : p.name.charAt(0)}
                        </div>
                        <div className="flex flex-col">
@@ -162,7 +162,7 @@ const SalesEntry = () => {
               <div className="flex justify-between items-start mb-8 pb-4 border-b border-slate-50">
                 <div className="flex items-center gap-4">
                   <div className="h-14 w-14 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center font-bold text-emerald-600 text-xl italic overflow-hidden">
-                    {selectedProduct.image ? <img src={`http://localhost:5000/api/products/image/${selectedProduct.image}`} className="w-full h-full object-cover" /> : selectedProduct.name.charAt(0)}
+                    {selectedProduct.image ? <img src={`${BASE_URL}/api/products/image/${selectedProduct.image}`} className="w-full h-full object-cover" /> : selectedProduct.name.charAt(0)}
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-slate-800">{selectedProduct.name}</h3>
