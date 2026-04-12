@@ -11,25 +11,48 @@ router.post('/', auth, async (req, res) => {
         const product = await Product.findById(productId);
         if (!product) return res.status(404).json({ msg: 'Product not found' });
 
-        const profit = (sellingPrice - product.costPrice) * quantity;
+        const profit = (Number(sellingPrice) - product.buyPrice) * Number(quantity);
 
         const newSale = new Sale({
             userId: req.id,
             productId,
-            sellingPrice,
-            quantity,
+            sellingPrice: Number(sellingPrice),
+            quantity: Number(quantity),
             profit,
             date: date ? new Date(date) : undefined
         });
 
-        // Update stock
-        product.stock -= quantity;
-        await product.save();
+        if (product.stockQuantity !== undefined) {
+          product.stockQuantity -= Number(quantity);
+          await product.save();
+        }
 
         const sale = await newSale.save();
         res.json(sale);
     } catch (err) {
-        console.error(err.message);
+        console.error('Sale Record Error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Get aggregated stats for Charts
+router.get('/stats', auth, async (req, res) => {
+    try {
+        const sales = await Sale.find({ userId: req.id }).sort({ date: 1 });
+        
+        // Group by day for the chart
+        const grouped = sales.reduce((acc, sale) => {
+            const day = new Date(sale.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            if (!acc[day]) {
+                acc[day] = { name: day, sales: 0, profit: 0 };
+            }
+            acc[day].sales += (sale.sellingPrice * sale.quantity);
+            acc[day].profit += sale.profit;
+            return acc;
+        }, {});
+
+        res.json(Object.values(grouped).slice(-7)); // Last 7 days
+    } catch (err) {
         res.status(500).send('Server Error');
     }
 });
@@ -44,7 +67,7 @@ router.get('/', auth, async (req, res) => {
     }
 
     try {
-        const sales = await Sale.find(query).populate('productId', 'name costPrice minPrice').sort({ date: -1 });
+        const sales = await Sale.find(query).populate('productId', 'name buyPrice mrp').sort({ date: -1 });
         res.json(sales);
     } catch (err) {
         console.error(err.message);
@@ -52,7 +75,7 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
-// Get daily summary
+// Get summary
 router.get('/summary/daily', auth, async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);

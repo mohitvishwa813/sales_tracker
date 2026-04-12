@@ -1,62 +1,71 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #ffffff;
-  --color-surface: #ffffff;
-  --color-primary: #10b981; /* Emerald-500 */
-  --color-secondary: #334155; /* Slate-700 */
-  --color-success: #059669;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
+  --color-background: #f8f9fa;
+  --color-sidebar: #ffffff;
+  --color-card: #ffffff;
+  --color-primary: #2ca01c; /* QuickBooks Green */
+  --color-secondary: #393a3d; /* Dark Gray */
+  --color-border: #d4d7dc;
+  --color-income: #00a4d3;
+  --color-expenses: #ef7d11;
+  --color-taxes: #8d9096;
 }
 
 @layer base {
   body {
-    @apply bg-white text-slate-800 antialiased font-sans selection:bg-emerald-100 min-h-screen;
+    @apply bg-slate-50 text-slate-900 antialiased font-sans selection:bg-emerald-100 min-h-screen text-sm;
     margin: 0;
-    /* Soft White Foundation */
-    background: #ffffff;
   }
 }
 
 @layer components {
-  .glass {
-    @apply bg-white/70 backdrop-blur-md border border-slate-100;
+  /* Cleaner QuickBooks-style cards */
+  .qb-card {
+    @apply bg-white border border-slate-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all;
   }
 
-  .glass-card {
-    @apply bg-white border border-slate-100/80 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/40;
+  .qb-header {
+    @apply flex justify-between items-center mb-6 pb-2 border-b border-slate-100;
+  }
+
+  .qb-title {
+    @apply text-lg font-semibold text-slate-700;
   }
 
   .btn-primary {
-    @apply bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 px-8 rounded-2xl transition-all duration-300 shadow-xl shadow-emerald-600/10 active:scale-[0.98] disabled:opacity-50 uppercase text-[10px] tracking-[0.2em];
+    @apply bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-5 rounded-full transition-all active:scale-[0.98] disabled:opacity-50 text-sm;
+  }
+
+  .btn-outline {
+    @apply bg-white border border-slate-300 hover:bg-slate-50 text-slate-600 font-bold py-2 px-5 rounded-full transition-all text-sm;
   }
 
   .input-field {
-    @apply bg-slate-50 border border-slate-200/50 rounded-2xl py-4 px-5 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500/30 transition-all placeholder:text-slate-400 text-slate-900 font-bold;
+    @apply bg-white border border-slate-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 text-slate-900 w-full;
   }
 
+  /* Fixed sidebar link without @apply group */
   .sidebar-link {
-    @apply flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 border text-slate-400 border-transparent hover:bg-emerald-50 hover:text-emerald-700;
+    @apply flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 border border-transparent text-slate-600 hover:bg-slate-100 hover:text-emerald-700;
   }
 
   .sidebar-link-active {
-    @apply bg-emerald-50 text-emerald-600 border-emerald-100/50 shadow-sm font-black;
+    @apply bg-slate-50 text-emerald-700 border-l-4 border-l-emerald-600 shadow-sm font-bold;
   }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 12px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f8fafc;
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
-  border-radius: 12px;
-  border: 3px solid #f8fafc;
+  background: #cbd5e1;
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
+  background: #94a3b8;
 }

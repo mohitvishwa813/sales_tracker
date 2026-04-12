@@ -10,8 +10,17 @@ import History from './pages/History';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" />;
+  
+  if (loading) {
+    return (
+      <div className="h-screen w-full bg-slate-900 flex flex-col items-center justify-center">
+        <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-6"></div>
+        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.5em] animate-pulse">Authenticating Session</p>
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/auth" replace />;
   
   return (
     <div className="flex flex-col md:flex-row bg-white min-h-screen text-slate-800 overflow-x-hidden">
