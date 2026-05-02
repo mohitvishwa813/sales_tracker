@@ -9,7 +9,8 @@ import {
   Package,
   TrendingUp,
   TrendingDown,
-  Lock
+  Lock,
+  Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -225,9 +226,12 @@ const SalesEntry = () => {
                 </div>
 
                 <div className="md:col-span-2 pt-6">
-                  <button type="submit" disabled={loading} className="w-full btn-primary py-5 text-base tracking-[0.1em] flex items-center justify-center gap-3">
-                    {loading ? 'Processing Transaction...' : 'Confirm Sale Record'}
-                    {!loading && <Plus size={24} />}
+                  <button type="submit" disabled={loading} className="w-full btn-primary py-5 text-base tracking-[0.1em] flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed">
+                    {loading ? (
+                      <><Loader2 size={24} className="animate-spin" /> Processing Transaction...</>
+                    ) : (
+                      <><Plus size={24} /> Confirm Sale Record</>
+                    )}
                   </button>
                 </div>
               </form>

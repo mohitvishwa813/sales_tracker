@@ -8,7 +8,7 @@ const auth = require('../middleware/auth');
 // @access  Private
 router.get('/', auth, async (req, res) => {
     try {
-        const customers = await Customer.find({ user: req.id }).sort({ createdAt: -1 });
+        const customers = await Customer.find({ user: req.id }).populate('debts.productId').sort({ createdAt: -1 });
         res.json(customers);
     } catch (err) {
         console.error(err.message);
@@ -47,7 +47,7 @@ router.post('/', auth, async (req, res) => {
 // @access  Private
 router.post('/:id/debts', auth, async (req, res) => {
     try {
-        const { productName, amount } = req.body;
+        const { productName, productId, amount } = req.body;
         
         const customer = await Customer.findOne({ _id: req.params.id, user: req.id });
         if (!customer) {
@@ -56,6 +56,7 @@ router.post('/:id/debts', auth, async (req, res) => {
 
         customer.debts.push({
             productName,
+            productId,
             amount: Number(amount)
         });
 
@@ -96,12 +97,13 @@ router.delete('/:id/debts/:debtId', auth, async (req, res) => {
             return res.status(404).json({ msg: 'Customer not found' });
         }
 
-        const initialLength = customer.debts.length;
-        customer.debts = customer.debts.filter(debt => debt._id.toString() !== req.params.debtId);
-
-        if (customer.debts.length === initialLength) {
+        const debt = customer.debts.id(req.params.debtId);
+        if (!debt) {
             return res.status(404).json({ msg: 'Debt record not found' });
         }
+
+        debt.status = 'paid';
+        debt.paidDate = new Date();
 
         await customer.save();
         res.json(customer);

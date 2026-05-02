@@ -41,7 +41,7 @@ const Customers = () => {
   );
 
   const handleSelectProduct = (p) => {
-    setDebtForm({ ...debtForm, productName: p.name, amount: p.mrp });
+    setDebtForm({ ...debtForm, productName: p.name, productId: p._id, amount: p.mrp });
     setSearch(p.name);
     setShowDropdown(false);
   };

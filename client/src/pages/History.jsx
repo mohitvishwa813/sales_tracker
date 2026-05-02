@@ -51,16 +51,40 @@ const History = () => {
       const allDebts = [];
       customersRes.data.forEach(c => {
         c.debts.forEach(d => {
-          const dDate = new Date(d.date);
-          if (dDate >= start && dDate <= end) {
-            allDebts.push({
-              _id: d._id,
-              isDebt: true,
-              customerName: c.name,
-              productName: d.productName,
-              amount: d.amount,
-              date: d.date
-            });
+          if (d.status !== 'paid') {
+            const dDate = new Date(d.date);
+            if (dDate >= start && dDate <= end) {
+              allDebts.push({
+                _id: d._id,
+                isDebt: true,
+                customerName: c.name,
+                productName: d.productName,
+                amount: d.amount,
+                date: d.date
+              });
+            }
+          } else if (d.status === 'paid' && d.paidDate) {
+            const pDate = new Date(d.paidDate);
+            if (pDate >= start && pDate <= end) {
+              let buyPrice = 0;
+              if (d.productId && d.productId.buyPrice) {
+                 let mrp = d.productId.mrp || d.amount;
+                 let qty = Math.max(1, Math.round(d.amount / mrp));
+                 buyPrice = d.productId.buyPrice * qty;
+              }
+              const profit = d.amount - buyPrice;
+
+              allDebts.push({
+                _id: d._id + '_paid',
+                isDebtRepayment: true,
+                customerName: c.name,
+                productName: d.productName,
+                productId: d.productId,
+                amount: d.amount,
+                profit: profit,
+                date: d.paidDate
+              });
+            }
           }
         });
       });
@@ -78,7 +102,13 @@ const History = () => {
     return acc;
   }, { revenue: 0, profit: 0 });
 
-  const totalDebt = debts.reduce((acc, d) => acc + d.amount, 0);
+  // Add repaid debt to revenue and profit
+  debts.filter(d => d.isDebtRepayment).forEach(d => {
+    totals.revenue += d.amount;
+    totals.profit += d.profit;
+  });
+
+  const totalDebt = debts.filter(d => d.isDebt).reduce((acc, d) => acc + d.amount, 0);
 
   const combinedHistory = [...sales, ...debts].sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -142,17 +172,17 @@ const History = () => {
               <table className="w-full text-left">
                 <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-[0.2em] border-b border-slate-100">
                   <tr>
-                    <th className="px-8 py-5">Product Identity</th>
-                    <th className="px-8 py-5">Volume</th>
-                    <th className="px-8 py-5">Gross Revenue</th>
-                    <th className="px-8 py-5 text-right">Net Margin</th>
+                    <th className="px-8 py-5 whitespace-nowrap">Product Identity</th>
+                    <th className="px-8 py-5 whitespace-nowrap">Volume</th>
+                    <th className="px-8 py-5 whitespace-nowrap">Gross Revenue</th>
+                    <th className="px-8 py-5 whitespace-nowrap text-right">Net Margin</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {combinedHistory.map((item) => (
                     item.isDebt ? (
                       <tr key={item._id} className="group hover:bg-slate-50 transition-all bg-red-50/20">
-                        <td className="px-8 py-6">
+                        <td className="px-8 py-6 whitespace-nowrap">
                           <div className="flex items-center gap-5">
                             <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-red-100 flex items-center justify-center font-black text-red-600 text-sm group-hover:scale-110 transition-transform italic">
                               D
@@ -163,21 +193,48 @@ const History = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-8 py-6 whitespace-nowrap">
                           <span className="text-[10px] font-black text-red-500 bg-red-100 px-3 py-1.5 rounded-full tracking-widest">DEBT</span>
                         </td>
-                        <td className="px-8 py-6 font-black text-xl text-slate-900 italic tracking-tighter">
+                        <td className="px-8 py-6 whitespace-nowrap font-black text-xl text-slate-900 italic tracking-tighter">
                           ₹{item.amount.toLocaleString()}
                         </td>
-                        <td className="px-8 py-6 text-right">
+                        <td className="px-8 py-6 whitespace-nowrap text-right">
                           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase shadow-sm bg-red-50 text-red-600">
                             -₹{item.amount.toLocaleString()}
                           </div>
                         </td>
                       </tr>
+                    ) : item.isDebtRepayment ? (
+                      <tr key={item._id} className="group hover:bg-slate-50 transition-all bg-emerald-50/20">
+                        <td className="px-8 py-6 whitespace-nowrap">
+                          <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-emerald-100 flex items-center justify-center font-black text-emerald-600 text-sm group-hover:scale-110 transition-transform italic overflow-hidden">
+                              {item.productId?.image ? (
+                                 <img src={`${BASE_URL}/api/products/image/${item.productId.image}`} className="w-full h-full object-cover rounded-2xl" />
+                              ) : item.productId?.name?.charAt(0) || 'R'}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-black text-slate-800 uppercase italic tracking-tighter text-base">{item.customerName} - {item.productName}</span>
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{format(new Date(item.date), 'MMM dd | hh:mm a')}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 whitespace-nowrap">
+                          <span className="text-[10px] font-black text-emerald-500 bg-emerald-100 px-3 py-1.5 rounded-full tracking-widest">---- (PAID DEBT)</span>
+                        </td>
+                        <td className="px-8 py-6 whitespace-nowrap font-black text-xl text-emerald-600 italic tracking-tighter">
+                          +₹{item.amount.toLocaleString()}
+                        </td>
+                        <td className="px-8 py-6 whitespace-nowrap text-right">
+                          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase shadow-sm ${item.profit >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                            {item.profit >= 0 ? '+' : '-'}₹{Math.abs(item.profit).toLocaleString()}
+                          </div>
+                        </td>
+                      </tr>
                     ) : (
                       <tr key={item._id} className="group hover:bg-slate-50 transition-all">
-                        <td className="px-8 py-6">
+                        <td className="px-8 py-6 whitespace-nowrap">
                           <div className="flex items-center gap-5">
                             <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center font-black text-emerald-600 text-sm group-hover:scale-110 transition-transform italic">
                               {item.productId?.image ? (
@@ -190,13 +247,13 @@ const History = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-8 py-6 whitespace-nowrap">
                           <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full tracking-widest">{item.quantity} UNIT</span>
                         </td>
-                        <td className="px-8 py-6 font-black text-xl text-slate-900 italic tracking-tighter">
+                        <td className="px-8 py-6 whitespace-nowrap font-black text-xl text-slate-900 italic tracking-tighter">
                           ₹{(item.sellingPrice * item.quantity).toLocaleString()}
                         </td>
-                        <td className="px-8 py-6 text-right">
+                        <td className="px-8 py-6 whitespace-nowrap text-right">
                           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase shadow-sm ${item.profit >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                             {item.profit >= 0 ? '+' : '-'}₹{Math.abs(item.profit).toLocaleString()}
                           </div>

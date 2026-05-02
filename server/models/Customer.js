@@ -2,8 +2,11 @@ const mongoose = require('mongoose');
 
 const DebtSchema = new mongoose.Schema({
     productName: { type: String, required: true },
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
     amount: { type: Number, required: true },
-    date: { type: Date, default: Date.now }
+    date: { type: Date, default: Date.now },
+    status: { type: String, enum: ['unpaid', 'paid'], default: 'unpaid' },
+    paidDate: { type: Date }
 });
 
 const CustomerSchema = new mongoose.Schema({
@@ -16,7 +19,7 @@ const CustomerSchema = new mongoose.Schema({
 
 // Calculate total debt virtually or maintain it. We can just compute it when needed or maintain it.
 CustomerSchema.virtual('totalDebt').get(function() {
-    return this.debts.reduce((sum, debt) => sum + debt.amount, 0);
+    return this.debts.filter(d => d.status !== 'paid').reduce((sum, debt) => sum + debt.amount, 0);
 });
 
 // Ensure virtuals are included in JSON

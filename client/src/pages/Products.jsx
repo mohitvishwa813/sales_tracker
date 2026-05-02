@@ -12,13 +12,15 @@ import {
   ShoppingBag,
   AlertCircle,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: '',
     buyPrice: '',
@@ -61,6 +63,7 @@ const Products = () => {
 
   const handleAdd = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const formData = new FormData();
     formData.append('name', newProduct.name);
     formData.append('buyPrice', newProduct.buyPrice);
@@ -83,6 +86,8 @@ const Products = () => {
     } catch (err) {
       console.error(err);
       showToast('Error adding item to inventory', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -222,9 +227,14 @@ const Products = () => {
               <button 
                 form="productForm"
                 type="submit" 
-                className="btn-primary flex-1 md:flex-none py-4 px-14 text-[11px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-600/20"
+                disabled={isSubmitting}
+                className="btn-primary flex-1 md:flex-none py-4 px-14 text-[11px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                SAVE TO VAULT
+                {isSubmitting ? (
+                  <><Loader2 size={16} className="animate-spin" /> SAVING...</>
+                ) : (
+                  'SAVE TO VAULT'
+                )}
               </button>
             </div>
           </div>

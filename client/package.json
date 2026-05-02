@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "axios": "^1.14.0",
     "chart.js": "^4.5.1",
     "clsx": "^2.1.1",
