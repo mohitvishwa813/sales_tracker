@@ -3,7 +3,8 @@ const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
+    password: { type: String, required: true },
+    status: { type: String, default: 'VIP' }
 }, { timestamps: true });
 
 // Hash password before saving - Using async without next() for Mongoose 8 compliance

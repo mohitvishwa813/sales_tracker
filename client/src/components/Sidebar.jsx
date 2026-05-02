@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, 
@@ -7,7 +7,10 @@ import {
   History,
   LogOut,
   LayoutDashboard,
-  BarChart2
+  BarChart2,
+  Users,
+  AlertTriangle,
+  Download
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -15,9 +18,44 @@ const Sidebar = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/auth');
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', onConfirm: null });
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      alert("To install the app:\n\nOn Desktop Chrome/Edge: Click the install icon (monitor with a down arrow) in the right side of your URL bar.\n\nOn Mobile iOS Safari: Tap the 'Share' icon and select 'Add to Home Screen'.\n\nOn Mobile Chrome: Tap the 3 dots menu and select 'Add to Home screen'.");
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
+
+  const handleLogoutClick = () => {
+    setConfirmDialog({
+      isOpen: true,
+      message: "Are you sure you want to securely log out of your session?",
+      onConfirm: () => {
+        logout();
+        navigate('/auth');
+        setConfirmDialog({ isOpen: false, message: '', onConfirm: null });
+      }
+    });
   };
 
   const navItems = [
@@ -25,6 +63,7 @@ const Sidebar = () => {
     { name: 'Add Sale', icon: <ShoppingCart size={20} />, path: '/sales/add' },
     { name: 'Products', icon: <Package size={20} />, path: '/products' },
     { name: 'History', icon: <History size={20} />, path: '/history' },
+    { name: 'Customers', icon: <Users size={20} />, path: '/customers' },
   ];
 
   return (
@@ -60,9 +99,16 @@ const Sidebar = () => {
           ))}
         </nav>
 
-        <div className="p-6 border-t border-slate-50">
+        <div className="p-6 border-t border-slate-50 space-y-2">
+            <button
+              onClick={handleInstallClick}
+              className="flex items-center gap-4 px-5 py-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-2xl transition-all w-full text-left"
+            >
+              <Download size={20} />
+              <span className="text-sm font-black uppercase tracking-wider">Install App</span>
+            </button>
           <button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className="flex items-center gap-4 px-5 py-4 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all w-full text-left"
           >
             <LogOut size={20} />
@@ -89,17 +135,44 @@ const Sidebar = () => {
             <span className="text-[8px] font-black uppercase tracking-tighter">{item.name}</span>
           </NavLink>
         ))}
-        
-        <button 
-          onClick={handleLogout}
-          className="flex flex-col items-center gap-1 text-slate-400"
+      </div>
+
+      {/* Mobile Floating Actions */}
+      <div className="md:hidden fixed top-6 right-6 flex flex-col gap-3 z-50">
+          <button
+            onClick={handleInstallClick}
+            className="p-3 bg-emerald-500 text-white shadow-xl shadow-emerald-500/30 rounded-2xl border border-emerald-400 transition-all hover:scale-105"
+          >
+            <Download size={20} />
+          </button>
+        <button
+          onClick={handleLogoutClick}
+          className="p-3 bg-white text-slate-400 hover:text-red-500 shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-100 transition-all hover:scale-105"
         >
-          <div className="p-2">
-            <LogOut size={20} />
-          </div>
-          <span className="text-[8px] font-black uppercase tracking-tighter">Exit</span>
+          <LogOut size={20} />
         </button>
       </div>
+
+      {/* Confirm Dialog */}
+      {confirmDialog.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tight mb-2">Confirm Action</h3>
+            <p className="text-sm font-bold text-slate-500 mb-8">{confirmDialog.message}</p>
+            <div className="flex gap-4">
+              <button onClick={() => setConfirmDialog({ isOpen: false, message: '', onConfirm: null })} className="flex-1 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] text-slate-500 hover:bg-slate-50 transition-all border-2 border-slate-100">
+                Cancel
+              </button>
+              <button onClick={confirmDialog.onConfirm} className="flex-1 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] bg-red-500 hover:bg-red-400 text-white shadow-lg shadow-red-500/20 transition-all">
+                Yes, Log out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

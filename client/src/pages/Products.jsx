@@ -9,7 +9,10 @@ import {
   TrendingDown,
   TrendingUp,
   Tag,
-  ShoppingBag
+  ShoppingBag,
+  AlertCircle,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
 
 const Products = () => {
@@ -24,6 +27,14 @@ const Products = () => {
   });
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+
+  const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', onConfirm: null });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -67,21 +78,30 @@ const Products = () => {
       setNewProduct({ name: '', buyPrice: '', mrp: '', stockQuantity: '' });
       setImageFile(null);
       setPreviewUrl(null);
+      showToast('Product successfully added to Vault!');
       fetchProducts();
     } catch (err) {
       console.error(err);
-      alert('Error adding item to inventory');
+      showToast('Error adding item to inventory', 'error');
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Remove this item from inventory?')) return;
-    try {
-      await api.delete(`/products/${id}`);
-      fetchProducts();
-    } catch (err) {
-      console.error(err);
-    }
+  const handleDelete = (id) => {
+    setConfirmDialog({
+      isOpen: true,
+      message: "Are you sure you want to remove this item from your inventory?",
+      onConfirm: async () => {
+        try {
+          await api.delete(`/products/${id}`);
+          showToast('Product successfully removed!');
+          fetchProducts();
+        } catch (err) {
+          console.error(err);
+          showToast('Error removing product', 'error');
+        }
+        setConfirmDialog({ isOpen: false, message: '', onConfirm: null });
+      }
+    });
   };
 
   if (loading) return <div className="p-20 text-center font-black animate-pulse text-slate-300">SCANNING INVENTORY...</div>;
@@ -223,7 +243,7 @@ const Products = () => {
                 )}
                 <button 
                   onClick={() => handleDelete(p._id)} 
-                  className="absolute top-6 right-6 p-4 bg-red-500 text-white rounded-2xl opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all shadow-xl shadow-red-500/30"
+                  className="absolute top-6 right-6 p-4 bg-red-500 text-white rounded-2xl opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:bg-red-600 transition-all shadow-xl shadow-red-500/30"
                 >
                   <Trash2 size={18} />
                 </button>
@@ -269,6 +289,35 @@ const Products = () => {
           </div>
         )}
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-[200] animate-in slide-in-from-bottom-5 fade-in duration-300 font-bold tracking-widest text-[10px] uppercase ${toast.type === 'error' ? 'bg-red-50 text-red-600 border-2 border-red-100' : 'bg-emerald-50 text-emerald-600 border-2 border-emerald-100'}`}>
+          {toast.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+          {toast.message}
+        </div>
+      )}
+
+      {/* Confirm Dialog */}
+      {confirmDialog.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tight mb-2">Confirm Action</h3>
+            <p className="text-sm font-bold text-slate-500 mb-8">{confirmDialog.message}</p>
+            <div className="flex gap-4">
+              <button onClick={() => setConfirmDialog({ isOpen: false, message: '', onConfirm: null })} className="flex-1 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] text-slate-500 hover:bg-slate-50 transition-all border-2 border-slate-100">
+                Cancel
+              </button>
+              <button onClick={confirmDialog.onConfirm} className="flex-1 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] bg-red-500 hover:bg-red-400 text-white shadow-lg shadow-red-500/20 transition-all">
+                Yes, Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

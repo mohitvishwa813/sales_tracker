@@ -8,10 +8,12 @@ import {
   X,
   Package,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Lock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useAuth } from '../context/AuthContext';
 
 const SalesEntry = () => {
   const [products, setProducts] = useState([]);
@@ -23,6 +25,7 @@ const SalesEntry = () => {
   const [saleDate, setSaleDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchProducts();
@@ -70,6 +73,25 @@ const SalesEntry = () => {
   const unitProfit = selectedProduct ? (Number(sellingPrice) - selectedProduct.buyPrice) : 0;
   const totalProfit = unitProfit * quantity;
   const isLoss = totalProfit < 0;
+
+  if (user?.status !== 'VIP') {
+    return (
+      <div className="p-8 max-w-5xl mx-auto min-h-[60vh] flex items-center justify-center">
+        <div className="text-center bg-white p-12 rounded-[3rem] shadow-2xl max-w-md w-full border border-slate-100 animate-in zoom-in-95 duration-500">
+          <div className="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-8 text-amber-500 shadow-inner">
+            <Lock size={48} />
+          </div>
+          <h1 className="text-3xl font-black text-slate-800 uppercase italic tracking-tighter mb-4">Feature Locked</h1>
+          <p className="text-sm font-bold text-slate-500 mb-8 leading-relaxed">
+            The manual Sale Entry tool is an advanced feature reserved exclusively for our VIP users.
+          </p>
+          <button onClick={() => navigate('/')} className="btn-primary w-full py-4 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-500/20">
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-5xl mx-auto">

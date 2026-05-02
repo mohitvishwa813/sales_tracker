@@ -8,10 +8,12 @@ import {
   TrendingDown,
   BarChart,
   Calendar,
-  Layers
+  Layers,
+  Lock
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   LineChart,
   Line,
@@ -39,6 +41,7 @@ const SummaryCard = ({ title, amount, icon, colorClass, bgClass }) => (
 );
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [summary, setSummary] = useState({ totalSales: 0, totalProfit: 0, itemCount: 0 });
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -139,6 +142,7 @@ const Dashboard = () => {
                 />
                 <Area type="monotone" dataKey="sales" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
                 <Area type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={3} fill="none" />
+                <Area type="monotone" dataKey="debt" stroke="#ef4444" strokeWidth={3} fill="none" strokeDasharray="5 5" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -157,18 +161,35 @@ const Dashboard = () => {
             </button>
           </div>
 
-          <button
-            onClick={() => navigate('/sales/add')}
-            className="qb-card p-6 border-2 border-emerald-500/10 hover:border-emerald-500/20 bg-emerald-50 text-emerald-700 flex items-center justify-between group transition-all"
-          >
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white rounded-xl shadow-sm text-emerald-600 group-hover:scale-110 transition-transform">
-                <Plus size={24} />
+          {user?.status === 'VIP' ? (
+            <button
+              onClick={() => navigate('/sales/add')}
+              className="qb-card p-6 border-2 border-emerald-500/10 hover:border-emerald-500/20 bg-emerald-50 text-emerald-700 flex items-center justify-between group transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white rounded-xl shadow-sm text-emerald-600 group-hover:scale-110 transition-transform">
+                  <Plus size={24} />
+                </div>
+                <span className="font-black text-sm uppercase italic">Quick Sale Entry</span>
               </div>
-              <span className="font-black text-sm uppercase italic">Quick Sale Entry</span>
-            </div>
-            <ArrowRight size={20} />
-          </button>
+              <ArrowRight size={20} />
+            </button>
+          ) : (
+            <button
+              disabled
+              className="qb-card p-6 border-2 border-slate-200 bg-slate-50 text-slate-400 flex items-center justify-between opacity-70 cursor-not-allowed"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white rounded-xl shadow-sm text-slate-400">
+                  <Lock size={20} />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-black text-sm uppercase italic">Quick Sale Entry</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-amber-500 mt-1">Upgrade to VIP to Unlock</span>
+                </div>
+              </div>
+            </button>
+          )}
         </div>
       </div>
     </div>

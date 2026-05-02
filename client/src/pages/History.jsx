@@ -15,6 +15,7 @@ import {
 
 const History = () => {
   const [sales, setSales] = useState([]);
+  const [debts, setDebts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('daily');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -40,10 +41,30 @@ const History = () => {
       start = startOfYear(date);
       end = endOfYear(date);
     }
-
     try {
-      const res = await api.get(`/sales?start=${start.toISOString()}&end=${end.toISOString()}`);
-      setSales(res.data);
+      const [salesRes, customersRes] = await Promise.all([
+        api.get(`/sales?start=${start.toISOString()}&end=${end.toISOString()}`),
+        api.get('/customers')
+      ]);
+      setSales(salesRes.data);
+
+      const allDebts = [];
+      customersRes.data.forEach(c => {
+        c.debts.forEach(d => {
+          const dDate = new Date(d.date);
+          if (dDate >= start && dDate <= end) {
+            allDebts.push({
+              _id: d._id,
+              isDebt: true,
+              customerName: c.name,
+              productName: d.productName,
+              amount: d.amount,
+              date: d.date
+            });
+          }
+        });
+      });
+      setDebts(allDebts);
     } catch (err) {
       console.error(err);
     } finally {
@@ -56,6 +77,10 @@ const History = () => {
     acc.profit += s.profit;
     return acc;
   }, { revenue: 0, profit: 0 });
+
+  const totalDebt = debts.reduce((acc, d) => acc + d.amount, 0);
+
+  const combinedHistory = [...sales, ...debts].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   if (loading) return <div className="p-20 text-center font-black animate-pulse text-slate-300">RETRIEVING AUDIT LOGS...</div>;
 
@@ -124,35 +149,62 @@ const History = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {sales.map((sale) => (
-                    <tr key={sale._id} className="group hover:bg-slate-50 transition-all">
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-5">
-                          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center font-black text-emerald-600 text-sm group-hover:scale-110 transition-transform italic">
-                            {sale.productId?.image ? (
-                               <img src={`${BASE_URL}/api/products/image/${sale.productId.image}`} className="w-full h-full object-cover rounded-2xl" />
-                            ) : sale.productId?.name?.charAt(0) || 'Ø'}
+                  {combinedHistory.map((item) => (
+                    item.isDebt ? (
+                      <tr key={item._id} className="group hover:bg-slate-50 transition-all bg-red-50/20">
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-red-100 flex items-center justify-center font-black text-red-600 text-sm group-hover:scale-110 transition-transform italic">
+                              D
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-black text-slate-800 uppercase italic tracking-tighter text-base">{item.customerName} - {item.productName}</span>
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{format(new Date(item.date), 'MMM dd | hh:mm a')}</span>
+                            </div>
                           </div>
-                          <div className="flex flex-col">
-                            <span className="font-black text-slate-800 uppercase italic tracking-tighter text-base">{sale.productId?.name || 'Unknown Item'}</span>
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{format(new Date(sale.date), 'MMM dd | hh:mm a')}</span>
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className="text-[10px] font-black text-red-500 bg-red-100 px-3 py-1.5 rounded-full tracking-widest">DEBT</span>
+                        </td>
+                        <td className="px-8 py-6 font-black text-xl text-slate-900 italic tracking-tighter">
+                          ₹{item.amount.toLocaleString()}
+                        </td>
+                        <td className="px-8 py-6 text-right">
+                          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase shadow-sm bg-red-50 text-red-600">
+                            -₹{item.amount.toLocaleString()}
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6">
-                        <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full tracking-widest">{sale.quantity} UNIT</span>
-                      </td>
-                      <td className="px-8 py-6 font-black text-xl text-slate-900 italic tracking-tighter">
-                        ₹{(sale.sellingPrice * sale.quantity).toLocaleString()}
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase shadow-sm ${sale.profit >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                          {sale.profit >= 0 ? '+' : '-'}₹{Math.abs(sale.profit).toLocaleString()}
-                        </div>
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={item._id} className="group hover:bg-slate-50 transition-all">
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center font-black text-emerald-600 text-sm group-hover:scale-110 transition-transform italic">
+                              {item.productId?.image ? (
+                                 <img src={`${BASE_URL}/api/products/image/${item.productId.image}`} className="w-full h-full object-cover rounded-2xl" />
+                              ) : item.productId?.name?.charAt(0) || 'Ø'}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-black text-slate-800 uppercase italic tracking-tighter text-base">{item.productId?.name || 'Unknown Item'}</span>
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{format(new Date(item.date), 'MMM dd | hh:mm a')}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full tracking-widest">{item.quantity} UNIT</span>
+                        </td>
+                        <td className="px-8 py-6 font-black text-xl text-slate-900 italic tracking-tighter">
+                          ₹{(item.sellingPrice * item.quantity).toLocaleString()}
+                        </td>
+                        <td className="px-8 py-6 text-right">
+                          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase shadow-sm ${item.profit >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                            {item.profit >= 0 ? '+' : '-'}₹{Math.abs(item.profit).toLocaleString()}
+                          </div>
+                        </td>
+                      </tr>
+                    )
                   ))}
-                  {sales.length === 0 && (
+                  {combinedHistory.length === 0 && (
                     <tr>
                       <td colSpan="4" className="text-center py-32 opacity-20 grayscale">
                         <HistoryIcon size={64} className="mx-auto mb-4" />
@@ -182,6 +234,10 @@ const History = () => {
                       <p className={`text-5xl font-black italic tracking-tighter ${totals.profit < 0 ? 'text-red-400' : 'text-white'}`}>
                         {totals.profit >= 0 ? '+' : '-'}₹{Math.abs(totals.profit).toLocaleString()}
                       </p>
+                   </div>
+                   <div className="pt-4 border-t border-white/10 mt-4">
+                      <p className="text-[9px] text-red-200/80 uppercase font-black mb-2 tracking-widest">Total Debt Recorded</p>
+                      <p className="text-3xl font-black italic tracking-tighter text-red-100">₹{totalDebt.toLocaleString()}</p>
                    </div>
                 </div>
              </div>

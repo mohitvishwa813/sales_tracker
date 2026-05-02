@@ -37,7 +37,7 @@ router.post('/register', async (req, res) => {
                 return res.status(500).json({ msg: 'Error signing token', error: err.message });
             }
             console.log('Token generated');
-            res.json({ token });
+            res.json({ token, status: user.status || 'VIP' });
         });
     } catch (err) {
         console.error('Register Route Error:', err.message);
@@ -58,7 +58,7 @@ router.post('/login', async (req, res) => {
         const payload = { user: { id: user.id } };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
             if (err) return res.status(500).json({ msg: 'Token error' });
-            res.json({ token });
+            res.json({ token, status: user.status || 'VIP' });
         });
     } catch (err) {
         console.error(err.message);

@@ -3,11 +3,18 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Sale = require('../models/Sale');
 const Product = require('../models/Product');
+const Customer = require('../models/Customer');
+const User = require('../models/User');
 
 // Add sale
 router.post('/', auth, async (req, res) => {
     const { productId, sellingPrice, quantity, date } = req.body;
     try {
+        const user = await User.findById(req.id);
+        if (!user || user.status !== 'VIP') {
+            return res.status(403).json({ msg: 'Upgrade to VIP to add sales' });
+        }
+
         const product = await Product.findById(productId);
         if (!product) return res.status(404).json({ msg: 'Product not found' });
 
@@ -39,19 +46,42 @@ router.post('/', auth, async (req, res) => {
 router.get('/stats', auth, async (req, res) => {
     try {
         const sales = await Sale.find({ userId: req.id }).sort({ date: 1 });
+        const customers = await Customer.find({ user: req.id });
         
         // Group by day for the chart
-        const grouped = sales.reduce((acc, sale) => {
+        const grouped = {};
+        
+        sales.forEach((sale) => {
             const day = new Date(sale.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            if (!acc[day]) {
-                acc[day] = { name: day, sales: 0, profit: 0 };
+            if (!grouped[day]) {
+                grouped[day] = { name: day, sales: 0, profit: 0, debt: 0 };
             }
-            acc[day].sales += (sale.sellingPrice * sale.quantity);
-            acc[day].profit += sale.profit;
-            return acc;
-        }, {});
+            grouped[day].sales += (sale.sellingPrice * sale.quantity);
+            grouped[day].profit += sale.profit;
+        });
 
-        res.json(Object.values(grouped).slice(-7)); // Last 7 days
+        customers.forEach(customer => {
+            customer.debts.forEach(debt => {
+                const day = new Date(debt.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                if (!grouped[day]) {
+                    grouped[day] = { name: day, sales: 0, profit: 0, debt: 0 };
+                }
+                grouped[day].debt += debt.amount;
+            });
+        });
+
+        // Ensure array is sorted by date properly (since object keys might not be ordered correctly)
+        // A simple way is to recreate the dates or just return Object.values(grouped).slice(-7) assuming recent activity
+        // Better: create last 7 days keys
+        const result = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dayStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            result.push(grouped[dayStr] || { name: dayStr, sales: 0, profit: 0, debt: 0 });
+        }
+
+        res.json(result);
     } catch (err) {
         res.status(500).send('Server Error');
     }

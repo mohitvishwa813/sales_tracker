@@ -26,6 +26,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/product'));
 app.use('/api/sales', require('./routes/sale'));
+app.use('/api/customers', require('./routes/customer'));
 
 app.get('/', (req, res) => {
     res.send('Shop Tracking API - Online');
