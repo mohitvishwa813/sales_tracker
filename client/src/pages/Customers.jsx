@@ -7,6 +7,7 @@ const Customers = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDebtModal, setShowDebtModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [searchCustomer, setSearchCustomer] = useState('');
 
@@ -15,6 +16,7 @@ const Customers = () => {
 
   // Debt Form
   const [debtForm, setDebtForm] = useState({ productName: '', amount: '' });
+  const [paymentForm, setPaymentForm] = useState({ amount: '' });
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -88,6 +90,23 @@ const Customers = () => {
     } catch (err) {
       console.error(err);
       showToast('Error adding debt', 'error');
+    }
+  };
+
+  const handleAddPayment = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post(`/customers/${selectedCustomer._id}/debts`, {
+        productName: 'Payment Received',
+        amount: -Math.abs(Number(paymentForm.amount))
+      });
+      setShowPaymentModal(false);
+      setPaymentForm({ amount: '' });
+      showToast('Payment recorded successfully!');
+      fetchCustomers();
+    } catch (err) {
+      console.error(err);
+      showToast('Error recording payment', 'error');
     }
   };
 
@@ -195,25 +214,32 @@ const Customers = () => {
                   <div key={debt._id} className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-700">{debt.productName}</span>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{new Date(debt.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{new Date(debt.date).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-black text-red-500 text-sm italic">₹{debt.amount}</span>
-                      <button onClick={() => handleDeleteDebt(c._id, debt._id)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-all" title="Remove Record">
-                        <X size={14} />
-                      </button>
+                      <span className={`font-black text-sm italic ${debt.amount < 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {debt.amount < 0 ? '+' : ''}₹{Math.abs(debt.amount)}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            <button
-              onClick={() => { setSelectedCustomer(c); setShowDebtModal(true); }}
-              className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-            >
-              <CreditCard size={14} /> Add Debt
-            </button>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => { setSelectedCustomer(c); setShowDebtModal(true); }}
+                className="flex-1 flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                <CreditCard size={14} /> Add Debt
+              </button>
+              <button
+                onClick={() => { setSelectedCustomer(c); setShowPaymentModal(true); }}
+                className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                <CheckCircle2 size={14} /> Add Payment
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -347,6 +373,40 @@ const Customers = () => {
               </div>
               <button type="submit" className="w-full bg-red-500 hover:bg-red-400 text-white font-black py-4 rounded-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2">
                 <Plus size={16} /> Add Debt Record
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Payment Modal */}
+      {showPaymentModal && selectedCustomer && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-2xl font-black uppercase italic tracking-tighter text-emerald-600">Add Payment</h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">For {selectedCustomer.name}</p>
+              </div>
+              <button onClick={() => setShowPaymentModal(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAddPayment} className="space-y-6">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Payment Amount (₹)</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={paymentForm.amount}
+                  onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})}
+                  className="w-full bg-slate-50 border-2 border-slate-100 px-4 py-3 rounded-xl focus:outline-none focus:border-emerald-500 font-bold text-emerald-600"
+                  placeholder="Enter amount paid"
+                />
+              </div>
+              <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2">
+                <CheckCircle2 size={16} /> Record Payment
               </button>
             </form>
           </div>

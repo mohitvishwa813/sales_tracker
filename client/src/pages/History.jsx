@@ -108,7 +108,14 @@ const History = () => {
     totals.profit += d.profit;
   });
 
-  const totalDebt = debts.filter(d => d.isDebt).reduce((acc, d) => acc + d.amount, 0);
+  // Add manual partial payments to revenue and profit
+  debts.filter(d => d.isDebt && d.amount < 0).forEach(d => {
+    totals.revenue += Math.abs(d.amount);
+    totals.profit += Math.abs(d.amount);
+  });
+
+  // Only sum positive amounts for "Total Debt Recorded"
+  const totalDebt = debts.filter(d => d.isDebt && d.amount > 0).reduce((acc, d) => acc + d.amount, 0);
 
   const combinedHistory = [...sales, ...debts].sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -181,11 +188,11 @@ const History = () => {
                 <tbody className="divide-y divide-slate-50">
                   {combinedHistory.map((item) => (
                     item.isDebt ? (
-                      <tr key={item._id} className="group hover:bg-slate-50 transition-all bg-red-50/20">
+                      <tr key={item._id} className={`group hover:bg-slate-50 transition-all ${item.amount < 0 ? 'bg-emerald-50/20' : 'bg-red-50/20'}`}>
                         <td className="px-8 py-6 whitespace-nowrap">
                           <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-red-100 flex items-center justify-center font-black text-red-600 text-sm group-hover:scale-110 transition-transform italic">
-                              D
+                            <div className={`w-12 h-12 rounded-2xl bg-white shadow-sm border ${item.amount < 0 ? 'border-emerald-100 text-emerald-600' : 'border-red-100 text-red-600'} flex items-center justify-center font-black text-sm group-hover:scale-110 transition-transform italic`}>
+                              {item.amount < 0 ? 'P' : 'D'}
                             </div>
                             <div className="flex flex-col">
                               <span className="font-black text-slate-800 uppercase italic tracking-tighter text-base">{item.customerName} - {item.productName}</span>
@@ -194,14 +201,16 @@ const History = () => {
                           </div>
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap">
-                          <span className="text-[10px] font-black text-red-500 bg-red-100 px-3 py-1.5 rounded-full tracking-widest">DEBT</span>
+                          <span className={`text-[10px] font-black px-3 py-1.5 rounded-full tracking-widest ${item.amount < 0 ? 'text-emerald-500 bg-emerald-100' : 'text-red-500 bg-red-100'}`}>
+                            {item.amount < 0 ? 'PAYMENT' : 'DEBT'}
+                          </span>
                         </td>
-                        <td className="px-8 py-6 whitespace-nowrap font-black text-xl text-slate-900 italic tracking-tighter">
-                          ₹{item.amount.toLocaleString()}
+                        <td className={`px-8 py-6 whitespace-nowrap font-black text-xl italic tracking-tighter ${item.amount < 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
+                          {item.amount < 0 ? '+' : ''}₹{Math.abs(item.amount).toLocaleString()}
                         </td>
                         <td className="px-8 py-6 whitespace-nowrap text-right">
-                          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase shadow-sm bg-red-50 text-red-600">
-                            -₹{item.amount.toLocaleString()}
+                          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase shadow-sm ${item.amount < 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                            {item.amount < 0 ? '+' : '-'}₹{Math.abs(item.amount).toLocaleString()}
                           </div>
                         </td>
                       </tr>

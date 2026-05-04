@@ -26,15 +26,15 @@ import {
   Area
 } from 'recharts';
 
-const SummaryCard = ({ title, amount, icon, colorClass, bgClass }) => (
-  <div className="qb-card flex flex-col min-h-[140px] animate-in slide-in-from-bottom-5 duration-500 border-l-4 border-l-emerald-500">
+const SummaryCard = ({ title, amount, icon, colorClass, bgClass, isCurrency = true }) => (
+  <div className="qb-card flex flex-col md:min-h-[140px] pb-4 md:pb-6 animate-in slide-in-from-bottom-5 duration-500 border-l-4 border-l-emerald-500">
     <div className="flex items-center gap-4">
       <div className={`p-3 rounded-2xl ${bgClass} ${colorClass}`}>
         {icon}
       </div>
       <div className="flex-1">
         <h3 className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">{title}</h3>
-        <h2 className="text-2xl font-black text-slate-800 tracking-tight italic">₹{amount.toLocaleString()}</h2>
+        <h2 className="text-2xl font-black text-slate-800 tracking-tight italic">{isCurrency ? '₹' : ''}{amount.toLocaleString()}</h2>
       </div>
     </div>
   </div>
@@ -69,9 +69,9 @@ const Dashboard = () => {
 
   return (
     <div className="p-6 md:p-10 space-y-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-4 md:pb-8">
         <div>
-          <h1 className="text-5xl font-black text-slate-900 uppercase italic leading-none tracking-tighter">Inventory Insights</h1>
+          <h1 className="md:text-5xl text-4xl font-black text-slate-900 uppercase leading-none tracking-tighter">Inventory Insights</h1>
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] mt-3">Periodic Business Summary</p>
         </div>
         <div className="flex gap-4">
@@ -103,11 +103,12 @@ const Dashboard = () => {
           icon={<ShoppingCart size={20} />}
           colorClass="text-amber-600"
           bgClass="bg-amber-50"
+          isCurrency={false}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 qb-card p-8 bg-white h-[400px]">
+        <div className="lg:col-span-2 qb-card p-4 md:p-8 bg-white h-[400px]">
           <div className="flex justify-between items-center mb-8">
             <h3 className="text-sm font-black text-slate-800 uppercase italic">Revenue Trend (Last 7 Days)</h3>
             <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
@@ -116,7 +117,7 @@ const Dashboard = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats}>
+              <AreaChart data={stats} margin={{ top: 10, right: 10, left: window.innerWidth < 768 ? -25 : 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
@@ -135,6 +136,7 @@ const Dashboard = () => {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                  width={window.innerWidth < 768 ? 40 : 60}
                 />
                 <Tooltip
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
