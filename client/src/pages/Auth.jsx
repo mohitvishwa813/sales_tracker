@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, UserPlus, ArrowUpCircle, ShieldCheck, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, ShoppingCart, ShieldCheck, Loader2 } from 'lucide-react';
 import api from '../api/config';
 import emailjs from '@emailjs/browser';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -68,14 +69,20 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 relative overflow-hidden" style={{ perspective: '1000px' }}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#ecfdf5_0%,_transparent_50%)]"></div>
       
-      <div className="glass-card w-full max-w-md relative z-10 shadow-2xl shadow-emerald-500/5">
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={showOtp ? 'otp' : (isLogin ? 'login' : 'signup')}
+          initial={{ rotateY: 90, opacity: 0, scale: 0.95 }}
+          animate={{ rotateY: 0, opacity: 1, scale: 1 }}
+          exit={{ rotateY: -90, opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+          className="glass-card w-full max-w-md relative z-10 shadow-2xl shadow-emerald-500/5"
+        >
         <div className="flex justify-center mb-8">
-          <div className="p-4 bg-emerald-500 rounded-3xl shadow-xl shadow-emerald-500/20">
-            <ArrowUpCircle className="w-8 h-8 text-white" />
-          </div>
+          <img src="/icon.jpeg" alt="ShopTrack Logo" className="w-20 h-20 object-contain rounded-3xl shadow-2xl shadow-slate-300/80 border-[0.4px] border-slate-200" />
         </div>
         
         <div className="text-center mb-10">
@@ -172,7 +179,8 @@ const Auth = () => {
             </p>
           </form>
         )}
-      </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };
