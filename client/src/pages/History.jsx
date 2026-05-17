@@ -122,10 +122,10 @@ const History = () => {
   if (loading) return <div className="p-20 text-center font-black animate-pulse text-slate-300">RETRIEVING AUDIT LOGS...</div>;
 
   return (
-    <div className="p-4 md:p-10 max-w-[1400px] mx-auto">
+    <div className="pt-20 px-4 pb-6 md:p-10 max-w-[1400px] mx-auto">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-slate-100 pb-8">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">Transaction Log</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">Transaction Log</h1>
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-3 underline decoration-emerald-200 underline-offset-8">Historical Business Record</p>
         </div>
         

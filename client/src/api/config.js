@@ -19,7 +19,18 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('subscription');
       window.location.href = '/auth';
+    }
+    // Server returns 403 + code:'SUBSCRIPTION_INACTIVE' when a gated endpoint
+    // is hit by an expired user. Bounce them to the upgrade page.
+    if (
+      error.response &&
+      error.response.status === 403 &&
+      error.response.data?.code === 'SUBSCRIPTION_INACTIVE' &&
+      window.location.pathname !== '/upgrade'
+    ) {
+      window.location.href = '/upgrade';
     }
     return Promise.reject(error);
   }

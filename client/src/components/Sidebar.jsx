@@ -1,50 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  Home, 
-  ShoppingCart, 
+import {
+  ShoppingCart,
   Package,
   History,
   LogOut,
   LayoutDashboard,
-  BarChart2,
   Users,
   AlertTriangle,
-  Download
+  Download,
+  Menu,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { usePwaInstall } from '../hooks/usePwaInstall';
+import ProfileDrawer from './ProfileDrawer';
+
+const navItems = [
+  { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
+  { name: 'Add Sale', icon: <ShoppingCart size={20} />, path: '/sales/add' },
+  { name: 'Products', icon: <Package size={20} />, path: '/products' },
+  { name: 'History', icon: <History size={20} />, path: '/history' },
+  { name: 'Customers', icon: <Users size={20} />, path: '/customers' },
+];
 
 const Sidebar = () => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { install } = usePwaInstall();
 
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', onConfirm: null });
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      alert("To install the app:\n\nOn Desktop Chrome/Edge: Click the install icon (monitor with a down arrow) in the right side of your URL bar.\n\nOn Mobile iOS Safari: Tap the 'Share' icon and select 'Add to Home Screen'.\n\nOn Mobile Chrome: Tap the 3 dots menu and select 'Add to Home screen'.");
-      return;
-    }
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-    }
-  };
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const handleLogoutClick = () => {
     setConfirmDialog({
@@ -52,19 +38,14 @@ const Sidebar = () => {
       message: "Are you sure you want to securely log out of your session?",
       onConfirm: () => {
         logout();
-        navigate('/auth');
+        navigate('/landing');
         setConfirmDialog({ isOpen: false, message: '', onConfirm: null });
       }
     });
   };
 
-  const navItems = [
-    { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
-    { name: 'Add Sale', icon: <ShoppingCart size={20} />, path: '/sales/add' },
-    { name: 'Products', icon: <Package size={20} />, path: '/products' },
-    { name: 'History', icon: <History size={20} />, path: '/history' },
-    { name: 'Customers', icon: <Users size={20} />, path: '/customers' },
-  ];
+  const profile = user?.profile;
+  const initial = (profile?.ownerName || profile?.email || '?').charAt(0).toUpperCase();
 
   return (
     <>
@@ -76,20 +57,39 @@ const Sidebar = () => {
             <div className="w-3 h-3 rounded-full bg-amber-400"></div>
             <div className="w-3 h-3 rounded-full bg-green-400"></div>
           </div>
-          <h1 className="text-xl font-black text-slate-800 uppercase italic tracking-tighter">ShopTrack Pro</h1>
+          <h1 className="text-xl font-black text-slate-800 uppercase italic tracking-tighter">ShopTracker Pro</h1>
           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Management Suite</p>
         </div>
 
-        <nav className="flex-1 px-4 mt-8 space-y-2">
+        {/* Desktop profile card — click to open drawer */}
+        {profile && (
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="mx-4 mt-2 flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-emerald-50 border border-slate-100 hover:border-emerald-200 transition-all group text-left"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white font-black flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+              {initial}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-black text-slate-900 truncate">{profile.shopName}</p>
+              <p className="text-[10px] font-bold text-slate-400 truncate uppercase tracking-widest mt-0.5">
+                {profile.ownerName}
+              </p>
+            </div>
+            <ChevronRight size={14} className="text-slate-300 group-hover:text-emerald-600 transition-colors shrink-0" />
+          </button>
+        )}
+
+        <nav className="flex-1 px-4 mt-6 space-y-2">
           {navItems.map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
               className={({ isActive }) =>
                 `flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 ${
-                  isActive 
-                  ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/20' 
-                  : 'text-slate-400 hover:bg-slate-50 hover:text-emerald-700'
+                  isActive
+                    ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/20'
+                    : 'text-slate-400 hover:bg-slate-50 hover:text-emerald-700'
                 }`
               }
             >
@@ -100,13 +100,13 @@ const Sidebar = () => {
         </nav>
 
         <div className="p-6 border-t border-slate-50 space-y-2">
-            <button
-              onClick={handleInstallClick}
-              className="flex items-center gap-4 px-5 py-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-2xl transition-all w-full text-left"
-            >
-              <Download size={20} />
-              <span className="text-sm font-black uppercase tracking-wider">Install App</span>
-            </button>
+          <button
+            onClick={() => install()}
+            className="flex items-center gap-4 px-5 py-4 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-2xl transition-all w-full text-left"
+          >
+            <Download size={20} />
+            <span className="text-sm font-black uppercase tracking-wider">Install App</span>
+          </button>
           <button
             onClick={handleLogoutClick}
             className="flex items-center gap-4 px-5 py-4 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all w-full text-left"
@@ -117,7 +117,7 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation Bar (WebApp Style) */}
+      {/* Mobile Bottom Navigation Bar */}
       <div className="md:hidden fixed bottom-6 left-6 right-6 h-20 bg-white/90 backdrop-blur-xl border border-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-[2.5rem] flex items-center justify-around px-6 z-50">
         {navItems.map((item) => (
           <NavLink
@@ -137,21 +137,19 @@ const Sidebar = () => {
         ))}
       </div>
 
-      {/* Mobile Floating Actions */}
-      <div className="md:hidden fixed top-6 right-6 flex flex-col gap-3 z-50">
-          <button
-            onClick={handleInstallClick}
-            className="p-3 bg-emerald-500 text-white shadow-xl shadow-emerald-500/30 rounded-2xl border border-emerald-400 transition-all hover:scale-105"
-          >
-            <Download size={20} />
-          </button>
-        <button
-          onClick={handleLogoutClick}
-          className="p-3 bg-white text-slate-400 hover:text-red-500 shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-100 transition-all hover:scale-105"
-        >
-          <LogOut size={20} />
-        </button>
-      </div>
+      {/* Mobile top-right hamburger — opens ProfileDrawer */}
+      <button
+        onClick={() => setProfileOpen(true)}
+        className="md:hidden fixed top-6 right-6 z-50 flex items-center gap-2 p-3 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:scale-105 transition-all"
+        aria-label="Open menu"
+      >
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 text-white font-black flex items-center justify-center text-xs">
+          {initial}
+        </div>
+        <Menu size={18} className="text-slate-600" />
+      </button>
+
+      <ProfileDrawer isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
 
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (

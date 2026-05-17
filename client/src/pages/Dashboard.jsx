@@ -9,7 +9,9 @@ import {
   BarChart,
   Calendar,
   Layers,
-  Lock
+  Lock,
+  Sparkles,
+  AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -25,6 +27,73 @@ import {
   AreaChart,
   Area
 } from 'recharts';
+
+const SubscriptionBanner = ({ subscription }) => {
+  const navigate = useNavigate();
+  if (!subscription) return null;
+
+  const { state, currentPeriodEnd } = subscription;
+  const periodEnd = currentPeriodEnd ? new Date(currentPeriodEnd) : null;
+  const daysLeft = periodEnd
+    ? Math.max(0, Math.ceil((periodEnd - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
+
+  // ACTIVE users with plenty of time left don't need a banner.
+  if (state === 'ACTIVE' && daysLeft > 7) return null;
+
+  const isTrial = state === 'TRIALING';
+  const isInactive = state === 'INACTIVE' || state === 'PAST_DUE';
+  const isRenewSoon = state === 'ACTIVE' && daysLeft <= 7;
+
+  const config = isInactive
+    ? {
+        bg: 'bg-red-50 border-red-200',
+        iconBg: 'bg-red-500 text-white',
+        icon: <AlertCircle size={16} />,
+        title: 'Your subscription has expired',
+        body: 'Reactivate to continue tracking sales and inventory.',
+        cta: 'Reactivate now',
+        ctaClass: 'bg-red-600 hover:bg-red-700 text-white',
+      }
+    : isRenewSoon
+    ? {
+        bg: 'bg-amber-50 border-amber-200',
+        iconBg: 'bg-amber-500 text-white',
+        icon: <AlertCircle size={16} />,
+        title: `Renews in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`,
+        body: 'Pay early to extend without interruption.',
+        cta: 'Renew now',
+        ctaClass: 'bg-amber-600 hover:bg-amber-700 text-white',
+      }
+    : {
+        bg: 'bg-emerald-50 border-emerald-200',
+        iconBg: 'bg-emerald-600 text-white',
+        icon: <Sparkles size={16} />,
+        title: `${daysLeft} day${daysLeft === 1 ? '' : 's'} left in your trial`,
+        body: 'Upgrade now to keep everything after your trial ends.',
+        cta: 'Upgrade for ₹299',
+        ctaClass: 'bg-slate-900 hover:bg-emerald-600 text-white',
+      };
+
+  return (
+    <div className={`flex flex-col md:flex-row md:items-center gap-4 p-4 md:p-5 rounded-2xl border ${config.bg}`}>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${config.iconBg}`}>
+        {config.icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-black text-slate-900 tracking-tight">{config.title}</p>
+        <p className="hidden md:block text-[12px] font-bold text-slate-600 mt-0.5">{config.body}</p>
+      </div>
+      <button
+        onClick={() => navigate('/upgrade')}
+        className={`flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full font-black uppercase tracking-widest text-[11px] transition-all ${config.ctaClass}`}
+      >
+        {config.cta}
+        <ArrowRight size={12} />
+      </button>
+    </div>
+  );
+};
 
 const SummaryCard = ({ title, amount, icon, colorClass, bgClass, isCurrency = true }) => (
   <div className="qb-card flex flex-col md:min-h-[140px] pb-4 md:pb-6 animate-in slide-in-from-bottom-5 duration-500 border-l-4 border-l-emerald-500">
@@ -68,16 +137,17 @@ const Dashboard = () => {
   if (loading) return <div className="p-20 text-center font-bold text-slate-300">Syncing Shop Analytics...</div>;
 
   return (
-    <div className="p-6 md:p-10 space-y-10">
+    <div className="pt-20 px-6 pb-6 md:p-10 space-y-8 md:space-y-10">
+      <SubscriptionBanner subscription={user?.subscription} />
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-4 md:pb-8">
         <div>
-          <h1 className="md:text-5xl text-4xl font-black text-slate-900 uppercase leading-none tracking-tighter">Inventory Insights</h1>
+          <h1 className="md:text-5xl text-3xl font-black text-slate-900 uppercase leading-none tracking-tighter">Inventory Insights</h1>
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] mt-3">Periodic Business Summary</p>
         </div>
-        <div className="flex gap-4">
-          <div className="bg-emerald-600 px-6 py-3 rounded-2xl shadow-xl shadow-emerald-600/20 text-center">
-            <p className="text-[8px] text-emerald-100 font-black uppercase tracking-widest leading-none mb-1">Total Daily Buffer</p>
-            <p className="text-xl font-black text-white italic">₹{summary.totalProfit.toLocaleString()}</p>
+        <div className="flex gap-4 self-start">
+          <div className="bg-emerald-600 px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl shadow-lg md:shadow-xl shadow-emerald-600/20 inline-flex md:flex flex-row md:flex-col items-center md:items-stretch gap-2 md:gap-0 text-left md:text-center">
+            <p className="text-[8px] text-emerald-100 font-black uppercase tracking-widest leading-none md:mb-1">Daily Buffer</p>
+            <p className="text-base md:text-xl font-black text-white italic">₹{summary.totalProfit.toLocaleString()}</p>
           </div>
         </div>
       </div>

@@ -56,11 +56,34 @@ const SalesEntry = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      // The <input type="date"> only yields YYYY-MM-DD, and `new Date("YYYY-MM-DD")`
+      // is parsed as UTC midnight — which renders as 5:30 AM IST and on the wrong
+      // day for users east of UTC. Compose a proper timestamp instead:
+      //   - If user picked today → use the exact current moment.
+      //   - If backdated → use the chosen date with the current time-of-day in
+      //     local timezone (so it sorts naturally and doesn't drift across days).
+      const now = new Date();
+      const todayStr = format(now, 'yyyy-MM-dd');
+      let saleTimestamp;
+      if (saleDate === todayStr) {
+        saleTimestamp = now;
+      } else {
+        const [y, m, d] = saleDate.split('-').map(Number);
+        saleTimestamp = new Date(
+          y,
+          m - 1,
+          d,
+          now.getHours(),
+          now.getMinutes(),
+          now.getSeconds()
+        );
+      }
+
       await api.post('/sales', {
         productId: selectedProduct._id,
         sellingPrice: Number(sellingPrice),
         quantity: Number(quantity),
-        date: new Date(saleDate)
+        date: saleTimestamp.toISOString()
       });
       navigate('/');
     } catch (err) {
@@ -75,19 +98,26 @@ const SalesEntry = () => {
   const totalProfit = unitProfit * quantity;
   const isLoss = totalProfit < 0;
 
-  if (user?.status !== 'VIP') {
+  const sub = user?.subscription;
+  const hasAccess =
+    sub &&
+    ['TRIALING', 'ACTIVE'].includes(sub.state) &&
+    sub.currentPeriodEnd &&
+    new Date(sub.currentPeriodEnd) > new Date();
+
+  if (!hasAccess) {
     return (
-      <div className="p-8 max-w-5xl mx-auto min-h-[60vh] flex items-center justify-center">
+      <div className="pt-20 px-6 pb-6 md:p-8 max-w-5xl mx-auto min-h-[60vh] flex items-center justify-center">
         <div className="text-center bg-white p-12 rounded-[3rem] shadow-2xl max-w-md w-full border border-slate-100 animate-in zoom-in-95 duration-500">
           <div className="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-8 text-amber-500 shadow-inner">
             <Lock size={48} />
           </div>
-          <h1 className="text-3xl font-black text-slate-800 uppercase italic tracking-tighter mb-4">Feature Locked</h1>
+          <h1 className="text-3xl font-black text-slate-800 uppercase italic tracking-tighter mb-4">Subscription Required</h1>
           <p className="text-sm font-bold text-slate-500 mb-8 leading-relaxed">
-            The manual Sale Entry tool is an advanced feature reserved exclusively for our VIP users.
+            Your subscription is inactive. Upgrade to ShopTracker Pro to continue adding sales.
           </p>
-          <button onClick={() => navigate('/')} className="btn-primary w-full py-4 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-500/20">
-            Return to Dashboard
+          <button onClick={() => navigate('/upgrade')} className="btn-primary w-full py-4 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-500/20">
+            Upgrade Now
           </button>
         </div>
       </div>
@@ -95,10 +125,10 @@ const SalesEntry = () => {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="pt-20 px-6 pb-6 md:p-8 max-w-5xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800">New Sale Entry</h1>
-        <p className="text-slate-500">Record a new transaction to track your business profit.</p>
+        <p className="text-slate-500 text-sm md:text-base">Record a new transaction to track your business profit.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

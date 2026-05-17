@@ -8,6 +8,9 @@ const auth = require('../middleware/auth');
 const crypto = require('crypto');
 const { Readable } = require('stream');
 
+// Hard cap on the number of products per user. Not surfaced in UI copy.
+const MAX_PRODUCTS_PER_USER = 60;
+
 // GridFS Bucket Initialization
 let gridfsBucket;
 const conn = mongoose.connection;
@@ -75,9 +78,17 @@ router.get('/', auth, async (req, res) => {
 router.post('/', [auth, upload.single('image')], async (req, res) => {
     try {
         const { name, buyPrice, mrp, stockQuantity } = req.body;
-        
+
         if (!name || !buyPrice || !mrp) {
             return res.status(400).json({ msg: 'Registration requires name, buy price, and MRP.' });
+        }
+
+        const currentCount = await Product.countDocuments({ user: req.id });
+        if (currentCount >= MAX_PRODUCTS_PER_USER) {
+            return res.status(403).json({
+                msg: "You've reached your plan's product limit. Contact info@shoptracker.in to expand capacity.",
+                code: 'PRODUCT_LIMIT_REACHED'
+            });
         }
 
         let imageFilename = null;
@@ -99,6 +110,40 @@ router.post('/', [auth, upload.single('image')], async (req, res) => {
     } catch (err) {
         console.error('File Upload Error:', err.message);
         res.status(500).json({ msg: 'Failed to process product registration', error: err.message });
+    }
+});
+
+// @route   PUT /api/products/:id
+// @desc    Update product fields and optionally replace the image
+router.put('/:id', [auth, upload.single('image')], async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) return res.status(404).json({ msg: 'Item not found' });
+        if (product.user.toString() !== req.id) return res.status(401).json({ msg: 'Unauthorized' });
+
+        const { name, buyPrice, mrp, stockQuantity } = req.body;
+        if (name !== undefined) product.name = name;
+        if (buyPrice !== undefined) product.buyPrice = Number(buyPrice);
+        if (mrp !== undefined) product.mrp = Number(mrp);
+        if (stockQuantity !== undefined) product.stockQuantity = Number(stockQuantity);
+
+        // Replace image only if a new file was uploaded. If not, keep the existing one.
+        if (req.file) {
+            initBucket();
+            if (product.image && gridfsBucket) {
+                const oldFiles = await gridfsBucket.find({ filename: product.image }).toArray();
+                if (oldFiles && oldFiles.length > 0) {
+                    await gridfsBucket.delete(oldFiles[0]._id);
+                }
+            }
+            product.image = await uploadToGridFS(req.file);
+        }
+
+        await product.save();
+        res.json(product);
+    } catch (err) {
+        console.error('Product update error:', err.message);
+        res.status(500).json({ msg: 'Failed to update product', error: err.message });
     }
 });
 

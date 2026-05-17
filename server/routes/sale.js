@@ -4,15 +4,16 @@ const auth = require('../middleware/auth');
 const Sale = require('../models/Sale');
 const Product = require('../models/Product');
 const Customer = require('../models/Customer');
-const User = require('../models/User');
 
 // Add sale
 router.post('/', auth, async (req, res) => {
     const { productId, sellingPrice, quantity, date } = req.body;
     try {
-        const user = await User.findById(req.id);
-        if (!user || user.status !== 'VIP') {
-            return res.status(403).json({ msg: 'Upgrade to VIP to add sales' });
+        if (!req.user.hasActiveAccess()) {
+            return res.status(403).json({
+                msg: 'Your subscription is inactive. Please upgrade to continue.',
+                code: 'SUBSCRIPTION_INACTIVE'
+            });
         }
 
         const product = await Product.findById(productId);

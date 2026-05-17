@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api, { BASE_URL } from '../api/config';
-import { 
-  Plus, 
-  Trash2, 
-  Package, 
+import {
+  Plus,
+  Trash2,
+  Package,
   Image as ImageIcon,
   X,
   TrendingDown,
@@ -13,8 +13,16 @@ import {
   AlertCircle,
   CheckCircle2,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Layers,
+  Pencil
 } from 'lucide-react';
+
+// Soft client-side cap — must match server's MAX_PRODUCTS_PER_USER. Server is
+// the source of truth; this just disables the "Register Item" button early
+// so users don't open a modal that will fail. The number itself is intentionally
+// not shown anywhere in the UI per product spec.
+const PRODUCT_CAP = 60;
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -29,6 +37,8 @@ const Products = () => {
   });
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  // null = adding new product. A product _id means modal is in edit mode.
+  const [editingId, setEditingId] = useState(null);
 
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', onConfirm: null });
@@ -61,7 +71,33 @@ const Products = () => {
     }
   };
 
-  const handleAdd = async (e) => {
+  const resetForm = () => {
+    setNewProduct({ name: '', buyPrice: '', mrp: '', stockQuantity: '' });
+    setImageFile(null);
+    setPreviewUrl(null);
+    setEditingId(null);
+  };
+
+  const openEditModal = (product) => {
+    setNewProduct({
+      name: product.name,
+      buyPrice: product.buyPrice,
+      mrp: product.mrp,
+      stockQuantity: product.stockQuantity
+    });
+    setImageFile(null);
+    // Show existing image as preview. Replaced if user picks a new file.
+    setPreviewUrl(product.image ? `${BASE_URL}/api/products/image/${product.image}` : null);
+    setEditingId(product._id);
+    setIsAdding(true);
+  };
+
+  const closeModal = () => {
+    setIsAdding(false);
+    resetForm();
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     const formData = new FormData();
@@ -74,18 +110,28 @@ const Products = () => {
     }
 
     try {
-      await api.post('/products', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setIsAdding(false);
-      setNewProduct({ name: '', buyPrice: '', mrp: '', stockQuantity: '' });
-      setImageFile(null);
-      setPreviewUrl(null);
-      showToast('Product successfully added to Vault!');
+      if (editingId) {
+        await api.put(`/products/${editingId}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        showToast('Product updated successfully!');
+      } else {
+        await api.post('/products', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        showToast('Product successfully added to Vault!');
+      }
+      closeModal();
       fetchProducts();
     } catch (err) {
       console.error(err);
-      showToast('Error adding item to inventory', 'error');
+      if (err.response?.data?.code === 'PRODUCT_LIMIT_REACHED') {
+        closeModal();
+        showToast(err.response.data.msg, 'error');
+        fetchProducts();
+      } else {
+        showToast(editingId ? 'Error updating product' : 'Error adding item to inventory', 'error');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -111,19 +157,39 @@ const Products = () => {
 
   if (loading) return <div className="p-20 text-center font-black animate-pulse text-slate-300">SCANNING INVENTORY...</div>;
 
+  const atCapacity = products.length >= PRODUCT_CAP;
+
+  const handleAddClick = () => {
+    if (atCapacity) {
+      showToast("You've reached your plan's product limit. Contact info@shoptracker.in to expand.", 'error');
+      return;
+    }
+    setIsAdding(true);
+  };
+
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto">
+    <div className="pt-20 px-6 pb-6 md:p-10 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-slate-100 pb-8">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">Inventory Vault</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">Inventory Vault</h1>
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-3 underline decoration-emerald-200 underline-offset-8">Product Catalog & Stock Controls</p>
         </div>
-        <button 
-          onClick={() => setIsAdding(true)} 
-          className="btn-primary py-4 px-10 flex items-center gap-3 text-[11px] tracking-[0.3em] font-black italic shadow-2xl"
-        >
-          <Plus size={20} strokeWidth={3} /> REGISTER ITEM
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 text-slate-700">
+            <Layers size={14} className="text-emerald-600" />
+            <span className="text-[11px] font-black uppercase tracking-widest">
+              {products.length} {products.length === 1 ? 'Product' : 'Products'}
+            </span>
+          </div>
+          <button
+            onClick={handleAddClick}
+            disabled={atCapacity}
+            className="btn-primary py-4 px-10 flex items-center gap-3 text-[11px] tracking-[0.3em] font-black italic shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            title={atCapacity ? "You've reached your plan's product limit" : undefined}
+          >
+            <Plus size={20} strokeWidth={3} /> REGISTER ITEM
+          </button>
+        </div>
       </div>
 
       {isAdding && (
@@ -131,15 +197,17 @@ const Products = () => {
           <div className="bg-white rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] w-full max-w-2xl max-h-[75vh] md:max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in duration-300 border border-white">
             {/* 1. Static Header */}
             <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 flex-shrink-0">
-              <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">Registration Form</h2>
-              <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white text-slate-300 hover:text-red-500 rounded-full transition-all">
+              <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">
+                {editingId ? 'Edit Item' : 'Registration Form'}
+              </h2>
+              <button onClick={closeModal} className="p-2 hover:bg-white text-slate-300 hover:text-red-500 rounded-full transition-all">
                 <X size={24} />
               </button>
             </div>
-            
+
             {/* 2. Scrollable Content Area */}
             <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-              <form id="productForm" onSubmit={handleAdd} className="space-y-8">
+              <form id="productForm" onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4 md:col-span-2">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Complete Product Name</label>
@@ -217,23 +285,23 @@ const Products = () => {
 
             {/* 3. Static Footer (Buttons always visible) */}
             <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex flex-col md:flex-row justify-end gap-5 flex-shrink-0">
-              <button 
-                type="button" 
-                onClick={() => setIsAdding(false)} 
+              <button
+                type="button"
+                onClick={closeModal}
                 className="btn-outline flex-1 md:flex-none py-4 px-10 border-0 font-black text-[10px] uppercase tracking-widest text-slate-400"
               >
-                Abort
+                Cancel
               </button>
-              <button 
+              <button
                 form="productForm"
-                type="submit" 
+                type="submit"
                 disabled={isSubmitting}
                 className="btn-primary flex-1 md:flex-none py-4 px-14 text-[11px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
-                  <><Loader2 size={16} className="animate-spin" /> SAVING...</>
+                  <><Loader2 size={16} className="animate-spin" /> {editingId ? 'UPDATING...' : 'SAVING...'}</>
                 ) : (
-                  'SAVE TO VAULT'
+                  editingId ? 'UPDATE ITEM' : 'SAVE TO VAULT'
                 )}
               </button>
             </div>
@@ -242,49 +310,59 @@ const Products = () => {
       )}
 
       {/* Responsive Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 pb-32">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-10 pb-32">
         {products.map((p) => (
-          <div key={p._id} className="qb-card p-8 bg-white border-0 shadow-lg hover:shadow-2xl hover:-translate-y-1 group transition-all relative overflow-hidden flex flex-col">
-            <div className="mb-8 relative h-64 w-full bg-slate-50 rounded-[2.5rem] overflow-hidden border border-slate-50 flex items-center justify-center">
-               {p.image ? (
-                  <img src={`${BASE_URL}/api/products/image/${p.image}`} alt={p.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                ) : (
-                  <Package size={80} className="text-slate-200 opacity-50" />
-                )}
-                <button 
-                  onClick={() => handleDelete(p._id)} 
-                  className="absolute top-6 right-6 p-4 bg-red-500 text-white rounded-2xl opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:bg-red-600 transition-all shadow-xl shadow-red-500/30"
+          <div key={p._id} className="qb-card p-5 md:p-8 bg-white border-0 shadow-lg hover:shadow-2xl md:hover:-translate-y-1 group transition-all relative overflow-hidden flex flex-col">
+            <div className="mb-5 md:mb-8 relative h-40 md:h-64 w-full bg-slate-50 rounded-2xl md:rounded-[2.5rem] overflow-hidden border border-slate-50 flex items-center justify-center">
+              {p.image ? (
+                <img src={`${BASE_URL}/api/products/image/${p.image}`} alt={p.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
+              ) : (
+                <Package size={64} className="text-slate-200 opacity-50" />
+              )}
+              <div className="absolute top-3 right-3 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => openEditModal(p)}
+                  className="p-2.5 md:p-3 bg-white/95 backdrop-blur-sm text-slate-700 hover:bg-emerald-600 hover:text-white rounded-xl transition-all shadow-lg shadow-slate-900/10"
+                  title="Edit product"
                 >
-                  <Trash2 size={18} />
+                  <Pencil size={15} />
                 </button>
+                <button
+                  onClick={() => handleDelete(p._id)}
+                  className="p-2.5 md:p-3 bg-white/95 backdrop-blur-sm text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-lg shadow-red-500/20"
+                  title="Delete product"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
 
-            <div className="px-2 flex-1 space-y-4">
-              <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter line-clamp-2">{p.name}</h3>
+            <div className="px-1 md:px-2 flex-1 space-y-3 md:space-y-4">
+              <h3 className="text-lg md:text-2xl font-black text-slate-900 uppercase italic tracking-tighter line-clamp-2">{p.name}</h3>
               <div className="inline-flex items-center gap-3">
                  <span className="text-[10px] font-black px-4 py-1.5 bg-slate-100 text-slate-500 rounded-full uppercase tracking-[0.1em]">
                    {p.stockQuantity} Units in Stock
                  </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-10 pt-8 border-t border-slate-50 mt-auto">
+              <div className="grid grid-cols-2 gap-6 md:gap-10 pt-4 md:pt-8 border-t border-slate-50 mt-auto">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cost Basis</p>
-                  <p className="text-2xl font-black text-slate-600 tracking-tighter italic">₹{p.buyPrice.toLocaleString()}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 md:mb-2">Cost Basis</p>
+                  <p className="text-xl md:text-2xl font-black text-slate-600 tracking-tighter italic">₹{p.buyPrice.toLocaleString()}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Market MRP</p>
-                  <p className="text-2xl font-black text-emerald-600 tracking-tighter italic">₹{p.mrp.toLocaleString()}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 md:mb-2">Market MRP</p>
+                  <p className="text-xl md:text-2xl font-black text-emerald-600 tracking-tighter italic">₹{p.mrp.toLocaleString()}</p>
                 </div>
               </div>
             </div>
-            
-            <div className="mt-8 p-6 bg-emerald-50 rounded-[2rem] flex items-center justify-between border border-emerald-100/50">
+
+            <div className="mt-4 md:mt-8 p-4 md:p-6 bg-emerald-50 rounded-2xl md:rounded-[2rem] flex items-center justify-between border border-emerald-100/50">
               <div className="flex flex-col">
-                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Est. Profit Margin</span>
-                <span className="text-xs font-bold text-emerald-800/60 uppercase">Per Unit</span>
+                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Profit Margin</span>
+                <span className="text-[10px] md:text-xs font-bold text-emerald-800/60 uppercase">Per Unit</span>
               </div>
-              <span className={`text-xl font-black italic ${p.mrp - p.buyPrice >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+              <span className={`text-lg md:text-xl font-black italic ${p.mrp - p.buyPrice >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
                 {p.mrp - p.buyPrice >= 0 ? '+' : ''}₹{(p.mrp - p.buyPrice).toLocaleString()}
               </span>
             </div>
@@ -295,7 +373,7 @@ const Products = () => {
           <div className="col-span-full border-4 border-dashed border-slate-100 rounded-[3rem] py-32 text-center bg-white/50 backdrop-blur-sm">
             <Package size={80} className="text-slate-100 mx-auto mb-6" />
             <p className="text-slate-400 font-black uppercase tracking-[0.4em] italic text-sm">Inventory Vault is Empty</p>
-            <button onClick={() => setIsAdding(true)} className="mt-8 text-emerald-600 hover:text-emerald-700 font-black text-[10px] uppercase tracking-widest italic underline underline-offset-8">Register New Entry</button>
+            <button onClick={() => { resetForm(); setIsAdding(true); }} className="mt-8 text-emerald-600 hover:text-emerald-700 font-black text-[10px] uppercase tracking-widest italic underline underline-offset-8">Register New Entry</button>
           </div>
         )}
       </div>

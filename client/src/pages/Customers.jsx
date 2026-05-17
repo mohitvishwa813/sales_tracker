@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api, { BASE_URL } from '../api/config';
-import { Users, Plus, Save, User as UserIcon, CreditCard, ChevronRight, X, Search, Package, Trash2, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Users, Plus, Save, User as UserIcon, CreditCard, ChevronRight, X, Search, Package, Trash2, AlertCircle, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
@@ -13,10 +13,13 @@ const Customers = () => {
 
   // New Customer Form
   const [newCustomer, setNewCustomer] = useState({ name: '', number: '' });
+  const [isSavingCustomer, setIsSavingCustomer] = useState(false);
 
   // Debt Form
   const [debtForm, setDebtForm] = useState({ productName: '', amount: '' });
+  const [isAddingDebt, setIsAddingDebt] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ amount: '' });
+  const [isAddingPayment, setIsAddingPayment] = useState(false);
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -66,6 +69,7 @@ const Customers = () => {
 
   const handleAddCustomer = async (e) => {
     e.preventDefault();
+    setIsSavingCustomer(true);
     try {
       await api.post('/customers', newCustomer);
       setShowAddModal(false);
@@ -75,11 +79,14 @@ const Customers = () => {
     } catch (err) {
       console.error(err);
       showToast(err.response?.data?.msg || 'Error creating customer', 'error');
+    } finally {
+      setIsSavingCustomer(false);
     }
   };
 
   const handleAddDebt = async (e) => {
     e.preventDefault();
+    setIsAddingDebt(true);
     try {
       await api.post(`/customers/${selectedCustomer._id}/debts`, debtForm);
       setShowDebtModal(false);
@@ -90,11 +97,14 @@ const Customers = () => {
     } catch (err) {
       console.error(err);
       showToast('Error adding debt', 'error');
+    } finally {
+      setIsAddingDebt(false);
     }
   };
 
   const handleAddPayment = async (e) => {
     e.preventDefault();
+    setIsAddingPayment(true);
     try {
       await api.post(`/customers/${selectedCustomer._id}/debts`, {
         productName: 'Payment Received',
@@ -107,6 +117,8 @@ const Customers = () => {
     } catch (err) {
       console.error(err);
       showToast('Error recording payment', 'error');
+    } finally {
+      setIsAddingPayment(false);
     }
   };
 
@@ -154,10 +166,10 @@ const Customers = () => {
   if (loading) return <div className="p-20 text-center font-bold text-slate-300">Loading Customers...</div>;
 
   return (
-    <div className="p-6 md:p-10 space-y-10">
+    <div className="pt-20 px-6 pb-6 md:p-10 space-y-8 md:space-y-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
         <div>
-          <h1 className="text-5xl font-black text-slate-900 uppercase italic leading-none tracking-tighter">Customers</h1>
+          <h1 className="text-3xl md:text-5xl font-black text-slate-900 uppercase italic leading-none tracking-tighter">Customers</h1>
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] mt-3">Manage Directory & Debts</p>
         </div>
         <button
@@ -277,8 +289,16 @@ const Customers = () => {
                   placeholder="Enter number"
                 />
               </div>
-              <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2">
-                <Save size={16} /> Save Customer
+              <button
+                type="submit"
+                disabled={isSavingCustomer}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isSavingCustomer ? (
+                  <><Loader2 size={16} className="animate-spin" /> Saving…</>
+                ) : (
+                  <><Save size={16} /> Save Customer</>
+                )}
               </button>
             </form>
           </div>
@@ -371,8 +391,16 @@ const Customers = () => {
                   placeholder="Enter amount"
                 />
               </div>
-              <button type="submit" className="w-full bg-red-500 hover:bg-red-400 text-white font-black py-4 rounded-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2">
-                <Plus size={16} /> Add Debt Record
+              <button
+                type="submit"
+                disabled={isAddingDebt}
+                className="w-full bg-red-500 hover:bg-red-400 text-white font-black py-4 rounded-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isAddingDebt ? (
+                  <><Loader2 size={16} className="animate-spin" /> Adding…</>
+                ) : (
+                  <><Plus size={16} /> Add Debt Record</>
+                )}
               </button>
             </form>
           </div>
@@ -405,8 +433,16 @@ const Customers = () => {
                   placeholder="Enter amount paid"
                 />
               </div>
-              <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2">
-                <CheckCircle2 size={16} /> Record Payment
+              <button
+                type="submit"
+                disabled={isAddingPayment}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl transition-all uppercase tracking-widest text-xs flex justify-center items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isAddingPayment ? (
+                  <><Loader2 size={16} className="animate-spin" /> Recording…</>
+                ) : (
+                  <><CheckCircle2 size={16} /> Record Payment</>
+                )}
               </button>
             </form>
           </div>

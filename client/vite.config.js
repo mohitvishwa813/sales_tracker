@@ -13,8 +13,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'ShopTrack Pro',
-        short_name: 'ShopTrack',
+        name: 'ShopTracker Pro',
+        short_name: 'ShopTracker',
         description: 'Advanced Inventory & Sales Tracking Platform',
         theme_color: '#0f172a',
         background_color: '#f8fafc',
