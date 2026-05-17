@@ -22,9 +22,12 @@ const PERKS = [
   'Priority support',
 ];
 
-// Frontend payment success is NEVER trusted. After Razorpay's success callback
-// fires we poll /payments/status until the server-side webhook handler flips
-// the user's state to ACTIVE.
+// Confirmation strategy:
+// 1. Razorpay's `handler` fires with payment_id + order_id + signature.
+// 2. We POST those to /payments/verify — the server checks the HMAC signature
+//    and confirms the payment with Razorpay's API, then activates instantly.
+// 3. If /verify fails for any reason (network, server down) we fall back to
+//    polling /status so the webhook can still rescue the session.
 const POLL_INTERVAL_MS = 2000;
 const POLL_TIMEOUT_MS = 30000;
 
@@ -106,11 +109,29 @@ const Upgrade = () => {
               paylater: false,
             },
           }),
-      handler: () => {
-        // Razorpay confirms the payment popup closed successfully.
-        // We don't trust this — start polling the server until the webhook
-        // updates our subscription record.
-        startConfirmationPolling();
+      handler: async (response) => {
+        // Razorpay's success callback. Try the synchronous verify path first;
+        // if it works the user is ACTIVE within ~1 second. Polling stays as a
+        // fallback in case /verify itself fails to reach the server.
+        setPhase('confirming');
+        try {
+          const verifyRes = await api.post('/payments/verify', {
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+          if (verifyRes.data?.subscription?.state === 'ACTIVE') {
+            await refreshSubscription();
+            setPhase('success');
+            setTimeout(() => navigate('/'), 1800);
+            return;
+          }
+          // Server accepted but state didn't flip (unexpected) — fall through to polling.
+          startConfirmationPolling();
+        } catch (err) {
+          console.error('Verify call failed, falling back to polling:', err);
+          startConfirmationPolling();
+        }
       },
       modal: {
         ondismiss: () => {

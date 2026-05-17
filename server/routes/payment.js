@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Razorpay = require('razorpay');
+const crypto = require('crypto');
 const auth = require('../middleware/auth');
 const Payment = require('../models/Payment');
 const WebhookEvent = require('../models/WebhookEvent');
@@ -75,6 +76,85 @@ router.post('/create-order', auth, async (req, res) => {
         console.error('Create-order error:', err);
         res.status(500).json({ msg: 'Failed to create order', error: err.error?.description || err.message });
     }
+});
+
+// @route   POST /api/payments/verify
+// @desc    Client-driven payment confirmation. Called from the Razorpay checkout
+//          `handler` callback the moment the popup reports success. Verifies the
+//          signature locally, double-checks payment status via Razorpay API, and
+//          activates the subscription. The webhook remains a safety net for cases
+//          where this verify call never runs (browser closed, network drop) and
+//          for non-payment events like refunds/disputes.
+// @access  Private
+router.post('/verify', auth, async (req, res) => {
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+        return res.status(400).json({ msg: 'Missing payment verification fields' });
+    }
+    if (!process.env.RAZORPAY_KEY_SECRET) {
+        return res.status(500).json({ msg: 'Payments are not configured on the server' });
+    }
+
+    // Razorpay's payment-success signature: HMAC-SHA256("orderId|paymentId", key_secret).
+    // Same cryptographic strength as the webhook signature.
+    const expectedSignature = crypto
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+        console.warn(`Verify: bad signature for order ${razorpay_order_id}`);
+        return res.status(400).json({ msg: 'Invalid payment signature' });
+    }
+
+    // Make sure the order belongs to the calling user — prevents someone with a
+    // valid (payment_id, order_id, signature) tuple from activating someone else.
+    const paymentDoc = await Payment.findOne({ orderId: razorpay_order_id });
+    if (!paymentDoc) {
+        return res.status(404).json({ msg: 'Order not found' });
+    }
+    if (paymentDoc.userId.toString() !== req.user.id.toString()) {
+        return res.status(403).json({ msg: 'Order does not belong to this user' });
+    }
+
+    // Fetch the payment from Razorpay to confirm the server-side state. Trusting
+    // only the signature would let a replay activate access for a failed payment
+    // (signature is over IDs, not status).
+    let payment;
+    try {
+        const razorpay = getRazorpay();
+        payment = await razorpay.payments.fetch(razorpay_payment_id);
+    } catch (err) {
+        console.error('Verify: Razorpay fetch failed:', err.message);
+        return res.status(502).json({ msg: 'Could not confirm payment with Razorpay' });
+    }
+
+    if (payment.status !== 'captured' && payment.status !== 'authorized') {
+        return res.status(400).json({
+            msg: `Payment is in "${payment.status}" state — cannot activate`,
+            paymentStatus: payment.status
+        });
+    }
+
+    try {
+        await applyCapturedPayment({
+            orderId: razorpay_order_id,
+            paymentId: razorpay_payment_id,
+            amount: payment.amount,
+            currency: payment.currency,
+            method: payment.method
+        });
+    } catch (err) {
+        console.error('Verify: applyCapturedPayment failed:', err);
+        return res.status(500).json({ msg: 'Failed to activate subscription' });
+    }
+
+    const freshUser = await User.findById(req.user.id);
+    res.json({
+        success: true,
+        subscription: freshUser.toSubscriptionInfo()
+    });
 });
 
 // @route   GET /api/payments/status
@@ -224,34 +304,40 @@ async function handlePaymentCaptured(event) {
     if (!payment) throw new Error('payment.captured: missing payment entity');
 
     const { id: paymentId, order_id: orderId, amount, method, currency } = payment;
+    await applyCapturedPayment({ orderId, paymentId, amount, currency, method });
+    return { paymentId, orderId };
+}
 
+// Shared activation primitive — used by both the webhook handler and the
+// client-driven /verify endpoint. Idempotent: re-running on an already-captured
+// Payment is a no-op, so whichever path arrives first wins and the second is harmless.
+async function applyCapturedPayment({ orderId, paymentId, amount, currency, method }) {
     const paymentDoc = await Payment.findOne({ orderId });
     if (!paymentDoc) {
-        // Order wasn't created by us — could be a leaked webhook URL or a test event.
-        // Don't extend access for an order we don't own. Ack so Razorpay stops retrying.
-        console.warn(`payment.captured for unknown order ${orderId} — ignoring`);
-        return { paymentId, orderId };
+        // Order wasn't created by us. For webhooks this can be a leaked URL or
+        // unrelated test event; for /verify the caller has already enforced
+        // ownership, so this branch is dead there. Either way, do nothing.
+        console.warn(`applyCapturedPayment: unknown order ${orderId} — ignoring`);
+        return { activated: false, reason: 'unknown-order' };
     }
 
-    // Idempotency at the business-state level: if we've already marked this
-    // payment captured, don't extend the period again.
     if (paymentDoc.status === 'captured') {
         console.log(`Payment ${paymentId} already captured — skipping period extension`);
-        return { paymentId, orderId };
+        return { activated: false, reason: 'already-captured' };
     }
 
     paymentDoc.paymentId = paymentId;
     paymentDoc.status = 'captured';
-    paymentDoc.method = method;
-    paymentDoc.amount = amount;
-    paymentDoc.currency = currency;
+    if (method) paymentDoc.method = method;
+    if (amount) paymentDoc.amount = amount;
+    if (currency) paymentDoc.currency = currency;
     paymentDoc.capturedAt = new Date();
     await paymentDoc.save();
 
     const user = await User.findById(paymentDoc.userId);
     if (!user) {
-        console.warn(`payment.captured: user ${paymentDoc.userId} not found for order ${orderId}`);
-        return { paymentId, orderId };
+        console.warn(`applyCapturedPayment: user ${paymentDoc.userId} not found for order ${orderId}`);
+        return { activated: false, reason: 'user-missing' };
     }
 
     // Extend from whichever is later: now, or their existing period end.
@@ -266,7 +352,7 @@ async function handlePaymentCaptured(event) {
     await user.save();
 
     console.log(`User ${user.id} subscription extended to ${user.currentPeriodEnd.toISOString()}`);
-    return { paymentId, orderId };
+    return { activated: true };
 }
 
 async function handlePaymentFailed(event) {
