@@ -11,7 +11,8 @@ const PERIOD_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // One paid plan: ShopTracker Pro at ₹299/month. Stored in paise.
-const PLAN_AMOUNT_PAISE = 29900;
+// TEMP: dropped to ₹10 for live-mode smoke testing. Restore to 29900 before going live.
+const PLAN_AMOUNT_PAISE = 1000;
 const PLAN_CURRENCY = 'INR';
 
 // Lazy-initialize the Razorpay client so a server missing payment env vars
