@@ -233,7 +233,7 @@ const Upgrade = () => {
                 </p>
                 <div className="mt-3 flex items-baseline gap-1.5">
                   <span className="text-5xl md:text-6xl font-black italic tracking-tighter">
-                    ₹10
+                    ₹299
                   </span>
                   <span className="text-sm font-bold text-slate-400">/month</span>
                 </div>
@@ -278,7 +278,7 @@ const Upgrade = () => {
                     <><Loader2 size={14} className="animate-spin" /> Opening checkout…</>
                   ) : (
                     <>
-                      Pay ₹10 & activate
+                      Pay ₹299 & activate
                       <ArrowRight size={14} />
                     </>
                   )}

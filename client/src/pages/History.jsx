@@ -164,13 +164,6 @@ const History = () => {
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Entries</p>
                   <p className="text-xl font-black text-slate-800 italic">{sales.length}</p>
                </div>
-               <div className="w-px h-10 bg-slate-100"></div>
-               <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Period Status</p>
-                  <p className={`text-xl font-black italic ${totals.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                    {totals.profit >= 0 ? 'PROFITABLE' : 'LOSS'}
-                  </p>
-               </div>
             </div>
           </div>
 

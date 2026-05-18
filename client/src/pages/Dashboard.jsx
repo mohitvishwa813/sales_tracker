@@ -233,7 +233,7 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {user?.status === 'VIP' ? (
+          {user?.subscription?.hasActiveAccess ? (
             <button
               onClick={() => navigate('/sales/add')}
               className="qb-card p-6 border-2 border-emerald-500/10 hover:border-emerald-500/20 bg-emerald-50 text-emerald-700 flex items-center justify-between group transition-all cursor-pointer"
@@ -248,8 +248,8 @@ const Dashboard = () => {
             </button>
           ) : (
             <button
-              disabled
-              className="qb-card p-6 border-2 border-slate-200 bg-slate-50 text-slate-400 flex items-center justify-between opacity-70 cursor-not-allowed"
+              onClick={() => navigate('/upgrade')}
+              className="qb-card p-6 border-2 border-slate-200 bg-slate-50 text-slate-400 flex items-center justify-between opacity-70 hover:opacity-90 transition-opacity"
             >
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-white rounded-xl shadow-sm text-slate-400">
@@ -257,7 +257,7 @@ const Dashboard = () => {
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="font-black text-sm uppercase italic">Quick Sale Entry</span>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-amber-500 mt-1">Upgrade to VIP to Unlock</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-amber-500 mt-1">Subscription expired — Renew</span>
                 </div>
               </div>
             </button>

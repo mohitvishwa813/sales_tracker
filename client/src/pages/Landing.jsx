@@ -396,11 +396,7 @@ const FEATURES = [
     title: 'Smart Alerts',
     body: 'Low-stock warnings, daily sales recaps, customer-due reminders — straight to your dashboard.',
   },
-  {
-    icon: Smartphone,
-    title: 'Works Everywhere',
-    body: 'Phone, tablet, desktop — same data, same experience. Install to home screen for a native-app feel.',
-  },
+ 
 ];
 
 const Features = () => (
@@ -421,21 +417,21 @@ const Features = () => (
 
       <motion.div
         {...stagger}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6"
       >
         {FEATURES.map((f) => (
           <motion.div
             key={f.title}
             variants={fadeUp}
             whileHover={{ y: -5 }}
-            className="group relative bg-white border border-slate-200 rounded-2xl p-8 transition-shadow hover:shadow-xl hover:shadow-slate-900/5 overflow-hidden"
+            className="group relative bg-white border border-slate-200 rounded-2xl p-4 md:p-8 transition-shadow hover:shadow-xl hover:shadow-slate-900/5 overflow-hidden"
           >
             <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-emerald-600 to-emerald-400 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5">
-              <f.icon size={22} />
+            <div className="w-9 h-9 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 md:mb-5">
+              <f.icon className="w-4 h-4 md:w-[22px] md:h-[22px]" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-2">{f.title}</h3>
-            <p className="text-sm text-slate-500 leading-relaxed">{f.body}</p>
+            <h3 className="text-sm md:text-lg font-bold text-slate-900 mb-1.5 md:mb-2 leading-snug">{f.title}</h3>
+            <p className="text-[11px] md:text-sm text-slate-500 leading-relaxed">{f.body}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -470,34 +466,34 @@ const STEPS = [
 ];
 
 const HowItWorks = () => (
-  <section id="how-it-works" className="py-24 md:py-28 bg-slate-50">
+  <section id="how-it-works" className="py-14 md:py-28 bg-slate-50">
     <div className="max-w-7xl mx-auto px-6 md:px-8">
-      <motion.div {...fadeUp} className="text-center max-w-2xl mx-auto mb-14">
+      <motion.div {...fadeUp} className="text-center max-w-2xl mx-auto mb-8 md:mb-14">
         <span className="inline-block bg-emerald-50 text-emerald-700 px-4 py-1 rounded-full text-sm font-semibold mb-3">
           Simple Setup
         </span>
-        <h2 className="text-3xl md:text-[2.5rem] font-extrabold text-slate-900 leading-tight">
+        <h2 className="text-2xl md:text-[2.5rem] font-extrabold text-slate-900 leading-tight">
           Get Started in 4 Easy Steps
         </h2>
-        <p className="mt-4 text-slate-500 text-lg">
+        <p className="mt-3 md:mt-4 text-slate-500 text-sm md:text-lg">
           No technical knowledge required. Set up and start tracking in under 10 minutes.
         </p>
       </motion.div>
 
       <motion.div
         {...stagger}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-12 relative"
+        className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mt-6 md:mt-12 relative"
       >
         {STEPS.map((s, i) => (
           <motion.div key={s.n} variants={fadeUp} className="text-center relative">
             {i < STEPS.length - 1 && (
               <div className="hidden lg:block absolute top-[30px] left-[calc(50%+40px)] right-[calc(-50%+40px)] h-[2px] bg-emerald-200" />
             )}
-            <div className="relative z-10 w-[60px] h-[60px] mx-auto rounded-full bg-emerald-600 text-white text-xl font-extrabold flex items-center justify-center shadow-lg shadow-emerald-600/30 mb-5">
+            <div className="relative z-10 w-11 h-11 md:w-[60px] md:h-[60px] mx-auto rounded-full bg-emerald-600 text-white text-base md:text-xl font-extrabold flex items-center justify-center shadow-lg shadow-emerald-600/30 mb-3 md:mb-5">
               {s.n}
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-1.5">{s.title}</h3>
-            <p className="text-sm text-slate-500 leading-relaxed">{s.body}</p>
+            <h3 className="text-sm md:text-lg font-bold text-slate-900 mb-1 md:mb-1.5">{s.title}</h3>
+            <p className="text-[11px] md:text-sm text-slate-500 leading-relaxed">{s.body}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -717,14 +713,14 @@ const Pricing = () => {
 
         <motion.div
           {...stagger}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto"
+          className="flex lg:grid lg:grid-cols-3 overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none -mx-6 md:-mx-8 lg:mx-auto px-6 md:px-8 lg:px-0 pt-5 pb-6 lg:pt-0 lg:pb-0 gap-4 lg:gap-6 lg:max-w-5xl [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
         >
           {plans.map((p) => (
             <motion.div
               key={p.name}
               variants={fadeUp}
               whileHover={{ y: -5 }}
-              className={`relative rounded-2xl p-8 text-center transition-all ${
+              className={`relative rounded-2xl p-8 text-center transition-all min-w-[80%] sm:min-w-[55%] lg:min-w-0 shrink-0 lg:shrink snap-center ${
                 p.highlight
                   ? 'border-2 border-emerald-600 shadow-2xl shadow-emerald-600/10 lg:scale-105 bg-white'
                   : 'border-2 border-slate-200 bg-white hover:border-emerald-300'
