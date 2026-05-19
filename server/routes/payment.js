@@ -10,8 +10,9 @@ const User = require('../models/User');
 const PERIOD_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-// One paid plan: ShopTracker Pro at ₹299/month. Stored in paise.
-const PLAN_AMOUNT_PAISE = 29900;
+// ShopTracker Pro: list price ₹299/month, currently discounted to ₹99.
+// Restore to 29900 when the launch discount ends.
+const PLAN_AMOUNT_PAISE = 9900;
 const PLAN_CURRENCY = 'INR';
 
 // Lazy-initialize the Razorpay client so a server missing payment env vars

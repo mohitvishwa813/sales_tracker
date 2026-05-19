@@ -659,9 +659,10 @@ const Pricing = () => {
     },
     {
       name: 'ShopTracker Pro',
-      price: '₹299',
+      price: '₹99',
+      originalPrice: '₹299',
       period: '/ month',
-      limit: 'Most Popular',
+      limit: 'Launch Offer',
       features: [
         'Up to 100+ products & sales',
         'Customer debt management',
@@ -733,8 +734,18 @@ const Pricing = () => {
               )}
               <h3 className="text-xl font-bold text-slate-900 mb-2">{p.name}</h3>
               <div className="my-4">
-                <span className="text-5xl font-extrabold text-slate-900">{p.price}</span>
-                <span className="text-base text-slate-500 ml-1.5">{p.period}</span>
+                <div className="flex items-baseline justify-center gap-2 flex-wrap">
+                  <span className="text-5xl font-extrabold text-slate-900">{p.price}</span>
+                  {p.originalPrice && (
+                    <span className="text-xl font-bold text-slate-400 line-through">{p.originalPrice}</span>
+                  )}
+                  <span className="text-base text-slate-500">{p.period}</span>
+                </div>
+                {p.originalPrice && (
+                  <p className="mt-2 text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
+                    Launch offer · Save 67%
+                  </p>
+                )}
               </div>
               <span className="inline-block bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full mb-4">
                 {p.limit}
@@ -866,7 +877,7 @@ const FinalCTA = () => (
           <ArrowRight size={16} />
         </Link>
         <p className="mt-5 text-sm text-slate-400">
-          7-day free trial · ₹299/month · Cancel anytime · UPI accepted
+          7-day free trial · ₹99/month (launch offer) · Cancel anytime · UPI accepted
         </p>
       </motion.div>
     </div>

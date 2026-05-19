@@ -71,7 +71,7 @@ const SubscriptionBanner = ({ subscription }) => {
         icon: <Sparkles size={16} />,
         title: `${daysLeft} day${daysLeft === 1 ? '' : 's'} left in your trial`,
         body: 'Upgrade now to keep everything after your trial ends.',
-        cta: 'Upgrade for ₹299',
+        cta: 'Upgrade for ₹99',
         ctaClass: 'bg-slate-900 hover:bg-emerald-600 text-white',
       };
 

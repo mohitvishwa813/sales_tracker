@@ -231,13 +231,19 @@ const Upgrade = () => {
                 <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em]">
                   Pro Monthly
                 </p>
-                <div className="mt-3 flex items-baseline gap-1.5">
+                <div className="mt-3 flex items-baseline gap-2 flex-wrap">
                   <span className="text-5xl md:text-6xl font-black italic tracking-tighter">
+                    ₹99
+                  </span>
+                  <span className="text-2xl font-bold text-slate-500 line-through">
                     ₹299
                   </span>
                   <span className="text-sm font-bold text-slate-400">/month</span>
                 </div>
-                <p className="mt-2 text-sm text-slate-300">
+                <p className="mt-2 text-[11px] font-black text-emerald-400 uppercase tracking-widest">
+                  Launch offer · Save 67%
+                </p>
+                <p className="mt-1 text-sm text-slate-300">
                   Cancel anytime. No setup fees.
                 </p>
               </div>
@@ -278,7 +284,7 @@ const Upgrade = () => {
                     <><Loader2 size={14} className="animate-spin" /> Opening checkout…</>
                   ) : (
                     <>
-                      Pay ₹299 & activate
+                      Pay ₹99 & activate
                       <ArrowRight size={14} />
                     </>
                   )}
