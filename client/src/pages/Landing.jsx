@@ -338,7 +338,7 @@ const Hero = () => (
         </motion.div>
       </div>
 
-      <div className="relative lg:order-2 order-first">
+      <div className="relative mt-12 lg:mt-0">
         <HeroMockup />
       </div>
     </div>

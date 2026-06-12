@@ -42,6 +42,8 @@ const Products = () => {
 
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', onConfirm: null });
+  const [activeImage, setActiveImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(true);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -310,59 +312,88 @@ const Products = () => {
       )}
 
       {/* Responsive Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-10 pb-32">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-32">
         {products.map((p) => (
-          <div key={p._id} className="qb-card p-5 md:p-8 bg-white border-0 shadow-lg hover:shadow-2xl md:hover:-translate-y-1 group transition-all relative overflow-hidden flex flex-col">
-            <div className="mb-5 md:mb-8 relative h-40 md:h-64 w-full bg-slate-50 rounded-2xl md:rounded-[2.5rem] overflow-hidden border border-slate-50 flex items-center justify-center">
+          <div key={p._id} className="qb-card p-4 md:p-5 bg-white border-0 border-l-4 border-l-emerald-500 shadow-md hover:shadow-lg hover:shadow-emerald-600/5 md:hover:shadow-2xl md:hover:-translate-y-1 group transition-all relative overflow-hidden flex flex-row md:flex-col items-center md:items-stretch gap-4 md:gap-0">
+            {/* Image section */}
+            <div className="relative w-20 h-20 md:w-full md:h-48 bg-slate-50 rounded-xl md:rounded-2xl overflow-hidden border border-slate-50 flex-shrink-0 flex items-center justify-center">
               {p.image ? (
-                <img src={`${BASE_URL}/api/products/image/${p.image}`} alt={p.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <img 
+                  src={`${BASE_URL}/api/products/image/${p.image}`} 
+                  alt={p.name} 
+                  onClick={() => {
+                    setImageLoading(true);
+                    setActiveImage({ url: `${BASE_URL}/api/products/image/${p.image}`, name: p.name });
+                  }}
+                  className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700 cursor-pointer"
+                  title="Click to view full size"
+                />
               ) : (
-                <Package size={64} className="text-slate-200 opacity-50" />
+                <>
+                  <Package size={32} className="text-slate-200 opacity-50 md:hidden" />
+                  <Package size={48} className="text-slate-200 opacity-50 hidden md:block" />
+                </>
               )}
-              <div className="absolute top-3 right-3 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => openEditModal(p)}
-                  className="p-2.5 md:p-3 bg-white/95 backdrop-blur-sm text-slate-700 hover:bg-emerald-600 hover:text-white rounded-xl transition-all shadow-lg shadow-slate-900/10"
-                  title="Edit product"
-                >
-                  <Pencil size={15} />
-                </button>
-                <button
-                  onClick={() => handleDelete(p._id)}
-                  className="p-2.5 md:p-3 bg-white/95 backdrop-blur-sm text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-lg shadow-red-500/20"
-                  title="Delete product"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
             </div>
 
-            <div className="px-1 md:px-2 flex-1 space-y-3 md:space-y-4">
-              <h3 className="text-lg md:text-2xl font-black text-slate-900 uppercase italic tracking-tighter line-clamp-2">{p.name}</h3>
+            {/* Action buttons (absolute on desktop, vertical bar on far right on mobile) */}
+            <div className="flex flex-col gap-2 md:absolute md:top-3 md:right-3 md:flex-row opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity ml-auto shrink-0 self-center md:self-start">
+              <button
+                onClick={() => openEditModal(p)}
+                className="p-2 md:p-2.5 bg-slate-50 md:bg-white/95 text-slate-700 hover:bg-emerald-600 hover:text-white rounded-xl transition-all shadow-sm md:shadow-lg shadow-slate-900/10"
+                title="Edit product"
+              >
+                <Pencil size={14} />
+              </button>
+              <button
+                onClick={() => handleDelete(p._id)}
+                className="p-2 md:p-2.5 bg-red-50 md:bg-white/95 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm md:shadow-red-500/20"
+                title="Delete product"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+
+            {/* Product info section */}
+            <div className="px-1 md:px-2 flex-1 space-y-1.5 md:space-y-3 min-w-0 md:mt-4">
+              <h3 className="text-base md:text-lg font-black text-slate-900 uppercase italic tracking-tighter whitespace-nowrap overflow-x-auto no-scrollbar max-w-full">{p.name}</h3>
               <div className="inline-flex items-center gap-3">
-                 <span className="text-[10px] font-black px-4 py-1.5 bg-slate-100 text-slate-500 rounded-full uppercase tracking-[0.1em]">
+                 <span className="text-[9px] md:text-[10px] font-black px-3 py-1 bg-slate-100 text-slate-500 rounded-full uppercase tracking-[0.1em]">
                    {p.stockQuantity} Units in Stock
                  </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 md:gap-10 pt-4 md:pt-8 border-t border-slate-50 mt-auto">
+              {/* Mobile-only compact price/profit row */}
+              <div className="flex md:hidden flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs">
+                <span className="font-bold text-slate-500">Cost: <span className="font-black text-slate-700">₹{p.buyPrice.toLocaleString()}</span></span>
+                <span className="text-slate-300">|</span>
+                <span className="font-bold text-slate-500">MRP: <span className="font-black text-emerald-600">₹{p.mrp.toLocaleString()}</span></span>
+                <span className="text-slate-300">|</span>
+                <span className={`font-black ${p.mrp - p.buyPrice >= 0 ? 'text-emerald-700 bg-emerald-50 border border-emerald-100/50' : 'text-red-600 bg-red-50 border border-red-100/50'} px-2 py-0.5 rounded-md text-[9px]`}>
+                  {p.mrp - p.buyPrice >= 0 ? '+' : ''}₹{(p.mrp - p.buyPrice).toLocaleString()}
+                </span>
+              </div>
+
+              {/* Desktop-only prices grid */}
+              <div className="hidden md:grid grid-cols-2 gap-4 pt-3 border-t border-slate-50 mt-auto">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 md:mb-2">Cost Basis</p>
-                  <p className="text-xl md:text-2xl font-black text-slate-600 tracking-tighter italic">₹{p.buyPrice.toLocaleString()}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 md:mb-1.5">Cost Basis</p>
+                  <p className="text-lg md:text-xl font-black text-slate-600 tracking-tighter italic">₹{p.buyPrice.toLocaleString()}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 md:mb-2">Market MRP</p>
-                  <p className="text-xl md:text-2xl font-black text-emerald-600 tracking-tighter italic">₹{p.mrp.toLocaleString()}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 md:mb-1.5">Market MRP</p>
+                  <p className="text-lg md:text-xl font-black text-emerald-600 tracking-tighter italic">₹{p.mrp.toLocaleString()}</p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 md:mt-8 p-4 md:p-6 bg-emerald-50 rounded-2xl md:rounded-[2rem] flex items-center justify-between border border-emerald-100/50">
+            {/* Desktop-only profit margin bar */}
+            <div className="hidden md:flex mt-3 p-3 bg-emerald-50 rounded-xl items-center justify-between border border-emerald-100/50">
               <div className="flex flex-col">
                 <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Profit Margin</span>
-                <span className="text-[10px] md:text-xs font-bold text-emerald-800/60 uppercase">Per Unit</span>
+                <span className="text-[10px] font-bold text-emerald-800/60 uppercase">Per Unit</span>
               </div>
-              <span className={`text-lg md:text-xl font-black italic ${p.mrp - p.buyPrice >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+              <span className={`text-base md:text-lg font-black italic ${p.mrp - p.buyPrice >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
                 {p.mrp - p.buyPrice >= 0 ? '+' : ''}₹{(p.mrp - p.buyPrice).toLocaleString()}
               </span>
             </div>
@@ -401,6 +432,57 @@ const Products = () => {
               </button>
               <button onClick={confirmDialog.onConfirm} className="flex-1 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] bg-red-500 hover:bg-red-400 text-white shadow-lg shadow-red-500/20 transition-all">
                 Yes, Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox / Popup Image Card */}
+      {activeImage && (
+        <div 
+          onClick={() => setActiveImage(null)} 
+          className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            className="bg-white rounded-[2rem] shadow-2xl overflow-hidden max-w-lg w-full max-h-[85vh] flex flex-col relative border border-white animate-in zoom-in-95 duration-300 cursor-default"
+          >
+            {/* Close Button */}
+            <button 
+              onClick={() => setActiveImage(null)} 
+              className="absolute top-4 right-4 z-50 p-2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full transition-all backdrop-blur-sm cursor-pointer"
+              title="Close image view"
+            >
+              <X size={20} />
+            </button>
+            
+            {/* Image Container */}
+            <div className="flex-1 bg-slate-50 flex items-center justify-center overflow-hidden min-h-[300px] relative">
+              {imageLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50">
+                  <Loader2 className="animate-spin text-emerald-600" size={36} />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Loading Asset...</p>
+                </div>
+              )}
+              <img 
+                src={activeImage.url} 
+                alt={activeImage.name} 
+                onLoad={() => setImageLoading(false)}
+                className={`max-w-full max-h-[70vh] object-contain transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+              />
+            </div>
+
+            {/* Footer with Title */}
+            <div className="p-6 bg-white border-t border-slate-50 flex items-center justify-between">
+              <h3 className="text-lg font-black text-slate-800 uppercase italic tracking-tight truncate pr-4">
+                {activeImage.name}
+              </h3>
+              <button
+                onClick={() => setActiveImage(null)}
+                className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>

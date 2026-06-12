@@ -24,6 +24,7 @@ const Customers = () => {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [expandedCustomerId, setExpandedCustomerId] = useState(null);
 
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, message: '', onConfirm: null });
@@ -90,6 +91,18 @@ const Customers = () => {
   useEffect(() => {
     fetchCustomers();
     fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const handleDocumentClick = (event) => {
+      // Don't close if a modal is open or if clicking inside a modal overlay
+      if (event.target.closest('.fixed') || event.target.closest('[role="dialog"]')) {
+        return;
+      }
+      setExpandedCustomerId(null);
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
   }, []);
 
   const handleAddCustomer = async (e) => {
@@ -211,7 +224,7 @@ const Customers = () => {
   if (loading) return <div className="p-20 text-center font-bold text-slate-300">Loading Customers...</div>;
 
   return (
-    <div className="pt-20 px-6 pb-6 md:p-10 space-y-8 md:space-y-10">
+    <div className="pt-20 px-6 pb-6 md:p-10 space-y-8 md:space-y-10 max-w-5xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
         <div>
           <h1 className="text-3xl md:text-5xl font-black text-slate-900 uppercase italic leading-none tracking-tighter">Customers</h1>
@@ -238,65 +251,94 @@ const Customers = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="flex flex-col gap-4 pb-32">
         {filteredCustomers.map((c) => (
-          <div key={c._id} className="qb-card p-6 flex flex-col gap-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                  <UserIcon size={24} />
+          <div 
+            key={c._id} 
+            onClick={(e) => e.stopPropagation()} 
+            className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden"
+          >
+            {/* Header / Horizontal Bar */}
+            <div 
+              onClick={() => setExpandedCustomerId(expandedCustomerId === c._id ? null : c._id)}
+              className="p-4 flex items-center justify-between cursor-pointer select-none border-l-4 border-l-indigo-500"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
+                  <UserIcon size={20} />
                 </div>
-                <div>
-                  <h3 className="font-black text-lg uppercase italic tracking-tight">{c.name}</h3>
+                <div className="min-w-0">
+                  <h3 className="font-black text-base uppercase italic tracking-tight truncate max-w-[150px] sm:max-w-xs">{c.name}</h3>
                   <p className="text-xs font-bold text-slate-400">{c.number}</p>
                 </div>
               </div>
-              <button 
-                onClick={() => handleDeleteCustomer(c._id)} 
-                className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-all"
-                title="Remove Customer"
-              >
-                <Trash2 size={16} />
-              </button>
+              
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Debt</p>
+                  <p className="text-base font-black text-red-500">₹{c.totalDebt?.toLocaleString() || 0}</p>
+                </div>
+                <div className="text-slate-400">
+                  <ChevronRight size={18} className={`transition-transform duration-300 ${expandedCustomerId === c._id ? 'rotate-90' : ''}`} />
+                </div>
+              </div>
             </div>
             
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex justify-between items-center mt-2">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Debt</span>
-              <span className="text-xl font-black text-red-500">₹{c.totalDebt?.toLocaleString() || 0}</span>
-            </div>
+            {/* Collapsible content area */}
+            {expandedCustomerId === c._id && (
+              <div className="p-6 border-t border-slate-50 bg-slate-50/30 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Customer Actions</span>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteCustomer(c._id);
+                    }} 
+                    className="text-slate-400 hover:text-red-500 hover:bg-red-50 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Remove Customer"
+                  >
+                    <Trash2 size={14} /> Remove Customer
+                  </button>
+                </div>
 
-            {c.debts && c.debts.length > 0 && (
-              <div className="flex flex-col gap-2 mt-2 max-h-40 overflow-y-auto pr-1">
-                {c.debts.map(debt => (
-                  <div key={debt._id} className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-slate-700">{debt.productName}</span>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{new Date(debt.date).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`font-black text-sm italic ${debt.amount < 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                        {debt.amount < 0 ? '+' : ''}₹{Math.abs(debt.amount)}
-                      </span>
-                    </div>
+                {c.debts && c.debts.length > 0 ? (
+                  <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+                    {c.debts.map(debt => (
+                      <div key={debt._id} className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-700">{debt.productName}</span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                            {new Date(debt.date).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`font-black text-sm italic ${debt.amount < 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {debt.amount < 0 ? '+' : ''}₹{Math.abs(debt.amount)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-xs font-bold text-slate-400 italic text-center py-4 bg-white border border-slate-100 rounded-xl">No debt history recorded</p>
+                )}
+
+                <div className="flex gap-3 mt-2">
+                  <button
+                    onClick={() => { setSelectedCustomer(c); setShowDebtModal(true); }}
+                    className="flex-1 flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
+                  >
+                    <CreditCard size={14} /> Add Debt
+                  </button>
+                  <button
+                    onClick={() => { setSelectedCustomer(c); setShowPaymentModal(true); }}
+                    className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
+                  >
+                    <CheckCircle2 size={14} /> Add Payment
+                  </button>
+                </div>
               </div>
             )}
-
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={() => { setSelectedCustomer(c); setShowDebtModal(true); }}
-                className="flex-1 flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-              >
-                <CreditCard size={14} /> Add Debt
-              </button>
-              <button
-                onClick={() => { setSelectedCustomer(c); setShowPaymentModal(true); }}
-                className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-              >
-                <CheckCircle2 size={14} /> Add Payment
-              </button>
-            </div>
           </div>
         ))}
       </div>
