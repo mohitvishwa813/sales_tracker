@@ -659,7 +659,7 @@ const Pricing = () => {
     },
     {
       name: 'ShopTracker Pro',
-      price: '₹99',
+      price: '₹49',
       originalPrice: '₹299',
       period: '/ month',
       limit: 'Launch Offer',
@@ -743,7 +743,7 @@ const Pricing = () => {
                 </div>
                 {p.originalPrice && (
                   <p className="mt-2 text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
-                    Launch offer · Save 67%
+                    Launch offer · Save 84%
                   </p>
                 )}
               </div>
@@ -877,7 +877,7 @@ const FinalCTA = () => (
           <ArrowRight size={16} />
         </Link>
         <p className="mt-5 text-sm text-slate-400">
-          7-day free trial · ₹99/month (launch offer) · Cancel anytime · UPI accepted
+          7-day free trial · ₹49/month (launch offer) · Cancel anytime · UPI accepted
         </p>
       </motion.div>
     </div>
